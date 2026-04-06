@@ -1,9 +1,13 @@
-# Forage
+<p align="center">
+  <img src="assets/logo.png" width="400" alt="Forage">
+</p>
 
-**How can an autonomous agent know it's done --- when "done" itself must be discovered?**
+<h3 align="center">How can an autonomous agent know it's done — when "done" itself must be discovered?</h3>
 
-[![Paper](https://img.shields.io/badge/arXiv-Forage-b31b1b.svg)](https://arxiv.org/abs/TODO)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p align="center">
+  <a href="https://arxiv.org/abs/TODO"><img src="https://img.shields.io/badge/arXiv-Forage-b31b1b.svg" alt="Paper"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
 
 Most agent frameworks assume a pre-defined goal. But the real world is full of tasks where "done" is unknown at the start:
 
