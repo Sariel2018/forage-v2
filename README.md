@@ -5,7 +5,14 @@
 [![Paper](https://img.shields.io/badge/arXiv-Forage-b31b1b.svg)](https://arxiv.org/abs/TODO)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Most agent frameworks assume a pre-defined goal. But in real-world tasks --- data collection, security auditing, literature review, knowledge graph construction --- the definition of "complete" is itself a discovery problem. An agent told to "collect all articles" doesn't know how many articles exist. It collects some, declares victory, and stops. We call this **denominator blindness**.
+Most agent frameworks assume a pre-defined goal. But the real world is full of tasks where "done" is unknown at the start:
+
+- A data collection agent told to "get all articles" doesn't know how many articles exist.
+- An AI scientist exploring a chemical space doesn't know how many compounds have the desired property.  
+- A security auditor doesn't know how many vulnerabilities exist in the system.
+- A literature reviewer doesn't know how many relevant papers are out there.
+
+In each case, the agent collects some results, declares victory, and stops --- often at single-digit completeness while self-reporting 100%. We call this **denominator blindness**: the agent confidently answers a question it was never equipped to ask --- *"how much is left?"*
 
 Forage solves this with one architectural principle: **separate the agent that defines success from the agent that pursues it.** Like animals foraging in an unknown environment (Optimal Foraging Theory), Forage operates without knowing the total resource pool, iteratively refining its estimate of the world's boundaries.
 
