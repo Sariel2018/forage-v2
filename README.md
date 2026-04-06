@@ -1,13 +1,15 @@
 # Forage
 
-**Autonomous Data Collection that Discovers What "Complete" Means**
+**Solving Denominator Blindness in Autonomous Agents via Co-Evolving Evaluation**
 
 [![Paper](https://img.shields.io/badge/arXiv-Forage-b31b1b.svg)](https://arxiv.org/abs/TODO)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Forage is a human-not-in-the-loop data collection harness in which the evaluation criteria *co-evolve* with the collection strategy. An independent **Evaluator Agent** discovers and iteratively refines the definition of completeness (the denominator), while an architecturally isolated **Planner Agent** optimizes collection (the numerator).
+Autonomous agents frequently terminate prematurely, reporting high coverage while missing large portions of the target. The root cause is **denominator blindness**: agents cannot accurately assess the total scope of an open-ended task, leading to overconfident self-evaluation against an underestimated denominator.
 
-> Agents without independent evaluation exhibit coverage gaps of up to **+84 percentage points** (self-reporting 100% at 15.9% actual recall). Full Forage achieves the highest absolute recall (**98.8%** and **74.8%**) with the most calibrated self-assessment.
+Forage is a minimal architectural principle for trustworthy autonomous evaluation. An independent **Evaluator Agent** discovers and iteratively refines the definition of completeness (the denominator), while an architecturally isolated **Planner Agent** optimizes task execution (the numerator). Method isolation between the two agents prevents cognitive anchoring, and deterministic evaluation scripts ensure auditability.
+
+> In a 6-group ablation study, agents without independent evaluation exhibit coverage gaps of up to **+84 percentage points** (self-reporting 100% at 15.9% actual recall). Full Forage achieves the highest absolute recall (**98.8%** and **74.8%**) with the most calibrated self-assessment (coverage gap of **-3pp**), at **3--4x lower cost** than single-agent baselines.
 
 ## The Problem: Denominator Blindness
 
@@ -161,16 +163,17 @@ tests/              # Unit tests
 
 ## Beyond Data Collection
 
-Denominator blindness applies to any task where "done" is unknown at the start:
+Denominator blindness is not specific to data collection --- it is a general problem for any autonomous agent operating in open-ended task spaces where the boundary of "done" must be discovered:
 
-| Task | The denominator problem |
-|------|----------------------|
+| Domain | The denominator problem |
+|--------|----------------------|
 | Data collection | "All articles" --- how many exist? |
-| Systematic review | "All relevant papers" --- how many are there? |
+| Systematic literature review | "All relevant papers" --- how many are there? |
 | Security audit | "All vulnerabilities" --- how many exist? |
-| Knowledge graph | "All entities" --- how many are there? |
+| Knowledge graph construction | "All entities/relations" --- how many are there? |
+| Compliance checking | "All affected systems" --- how many are there? |
 
-Forage provides a general architecture for these tasks. Data collection is the case study in this paper.
+The architectural principle --- **separate the agent that defines success from the agent that pursues it** --- applies broadly. Data collection is the case study in this paper because it offers the clearest quantitative validation (recall against a known ground truth).
 
 ## Citation
 
