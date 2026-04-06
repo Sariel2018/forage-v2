@@ -14,7 +14,9 @@ Most agent frameworks assume a pre-defined goal. But the real world is full of t
 
 In each case, the agent collects some results, declares victory, and stops --- often at single-digit completeness while self-reporting 100%. We call this **denominator blindness**: the agent confidently answers a question it was never equipped to ask --- *"how much is left?"*
 
-Forage solves this with one architectural principle: **separate the agent that defines success from the agent that pursues it.** Like animals foraging in an unknown environment (Optimal Foraging Theory), Forage operates without knowing the total resource pool, iteratively refining its estimate of the world's boundaries.
+Forage solves this with one architectural principle: **separate the agent that defines success from the agent that pursues it.** No human specifies the evaluation criteria. No human decides when to stop. No human intervenes at any point. The system autonomously discovers what "complete" means, verifies its own progress, and terminates when the goal is met --- or honestly reports what's missing when it isn't.
+
+The name draws from Optimal Foraging Theory in ecology: like animals foraging in an unknown environment under energy budgets, Forage operates without knowing the total resource pool, iteratively refining its estimate of the world's boundaries.
 
 <p align="center">
   <img src="assets/architecture.png" width="700" alt="Forage Architecture">
