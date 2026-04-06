@@ -88,21 +88,6 @@ forage experiment tasks/fa_2011.yaml \
     --repeats 3 --knowledge knowledge/
 ```
 
-## Task Specification
-
-```yaml
-task:
-  name: "whitehouse_trump2"
-  description: "Collect all White House announcements since Trump's 2nd inauguration"
-target:
-  topic: "White House presidential announcements and statements"
-  time_range: { start: "2025-01-20", end: "2026-04-01" }
-coverage:
-  target: 0.95
-budget:
-  max_rounds: 8
-```
-
 ## Project Structure
 
 ```
