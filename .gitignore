@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+
+# Environment
+.env
+
+# Experiment data (large, not tracked)
+output/
+experiments/
+experiments_*/
+old/
+logs/
+
+# Reference projects (large, external)
+references/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Paper (submitted via arxiv, not tracked in git)
+paper/
+texput.log
+
+# Internal docs
+docs/
+CLAUDE.md
+README_CN.md
+
+# pytest
+.pytest_cache/

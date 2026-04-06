@@ -1,0 +1,47 @@
+# Forage Task Spec: White House Announcements - Trump 2nd Term
+# 第二个实验: 政府公开数据, 无付费墙
+
+task:
+  name: "whitehouse_trump2"
+  description: "Collect all White House announcements since Trump's 2nd inauguration"
+
+target:
+  topic: "White House presidential announcements and statements"
+  time_range:
+    start: "2025-01-20"
+    end: "2026-04-01"
+  doc_type: "announcement"
+  language: "en"
+
+coverage:
+  mode: "hard"            # hard target: 政府公告应尽量完整
+  target: 0.95
+  dimensions:
+    - time                # 按月覆盖
+    - type                # 公告类型 (statements, executive orders, proclamations...)
+    - record
+
+quality:
+  min_text_length: 100
+  required_fields:
+    - title
+    - full_text
+    - date
+    - type
+  dedup: true
+
+budget:
+  max_rounds: 8           # v2: 从原来的 8 保持不变
+  max_requests: 3000      # 主预算：请求次数（公平，不受网络波动影响）
+  max_runtime_minutes: 120  # 兜底：防止单次跑太久
+
+risk:
+  respect_robots_txt: true
+  max_requests_per_minute: 20
+  forbidden_sources: []
+
+sources:
+  seed_sources:
+    - "https://www.whitehouse.gov"
+  preferred_sources: []
+  forbidden_sources: []

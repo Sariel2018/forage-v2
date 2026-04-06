@@ -1,0 +1,46 @@
+# Forage Task Spec: Foreign Affairs 2018-2020
+# 用于验证框架的第一个实验
+
+task:
+  name: "fa_2018_2020"
+  description: "Collect all Foreign Affairs articles from 2018 to 2020"
+
+target:
+  topic: "Foreign Affairs magazine articles"
+  time_range:
+    start: "2018-01-01"
+    end: "2020-12-31"
+  doc_type: "article"
+  language: "en"
+
+coverage:
+  mode: "soft"            # soft target: 允许未达标但需 gap report
+  target: 0.90            # 目标覆盖率 90%
+  dimensions:
+    - time                # 按月覆盖
+    - record              # 文章篇数
+
+quality:
+  min_text_length: 200    # 正文最短 200 字符
+  required_fields:
+    - title
+    - full_text
+    - date
+  dedup: true
+
+budget:
+  max_rounds: 10          # 最多 10 轮迭代
+  max_requests: 5000      # 主预算：请求次数（公平，不受网络波动影响）
+  max_runtime_minutes: 180  # 兜底：防止单次跑太久
+
+risk:
+  respect_robots_txt: true
+  max_requests_per_minute: 15
+  forbidden_sources: []
+
+sources:
+  seed_sources:
+    - "https://www.foreignaffairs.com"
+  preferred_sources:
+    - "https://web.archive.org"
+  forbidden_sources: []
