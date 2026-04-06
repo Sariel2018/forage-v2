@@ -34,6 +34,7 @@ texput.log
 docs/
 CLAUDE.md
 README_CN.md
+logo/
 
 # pytest
 .pytest_cache/
