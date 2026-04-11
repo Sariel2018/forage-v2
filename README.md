@@ -113,6 +113,10 @@ tests/              # Tests
 }
 ```
 
+## What's Next
+
+**v2 in progress**: extending Forage with cross-task knowledge accumulation.
+
 ## License
 
 [MIT](LICENSE)
