@@ -141,7 +141,7 @@ def run(
             eval_context = _build_evaluator_context(
                 spec, history, workspace, eval_result_history, planner_summaries,
             )
-            eval_result = evaluator.run(eval_context)
+            eval_result = evaluator.run_with_recovery(eval_context, trajectory=trajectory)
             round_cost += evaluator.cost_usd
             _merge_usage(round_usage, evaluator.usage)
 
@@ -151,7 +151,8 @@ def run(
 
             if eval_result.get("error"):
                 print(f"         ERROR: {eval_result['error']}")
-                print(f"         Raw result keys: {list(eval_result.keys())}")
+                if eval_result.get("stderr"):
+                    print(f"         STDERR: {eval_result['stderr'][:500]}")
                 print(f"         Skipping this round (agent call failed)")
                 continue
 
@@ -250,7 +251,7 @@ def run(
         plan_context = _build_planner_context(
             spec, history, workspace, eval_result_history, mode,
         )
-        plan_result = planner.run(plan_context)
+        plan_result = planner.run_with_recovery(plan_context, trajectory=trajectory)
         round_cost += planner.cost_usd
         _merge_usage(round_usage, planner.usage)
 
@@ -260,7 +261,8 @@ def run(
 
         if plan_result.get("error"):
             print(f"         ERROR: {plan_result['error']}")
-            print(f"         Raw result keys: {list(plan_result.keys())}")
+            if plan_result.get("stderr"):
+                print(f"         STDERR: {plan_result['stderr'][:500]}")
             print(f"         Skipping this round (agent call failed)")
             continue
 
