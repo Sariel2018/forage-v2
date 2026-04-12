@@ -133,6 +133,51 @@ class BaseAgent:
         finally:
             self.round_count += 1
 
+    def run_with_recovery(self, user_message: str, trajectory=None) -> dict:
+        """Run with fault tolerance — airdrop replacement if agent fails.
+
+        If the persistent session crashes or times out, creates a new session
+        with a recovery summary from the trajectory. Maintains method isolation
+        in the summary (only includes role-appropriate data).
+        """
+        result = self.run(user_message)
+
+        # Check if the result indicates a failure
+        if "error" not in result:
+            return result
+
+        print(f"  Warning: Agent session failed: {result['error']}")
+        print(f"  Airdropping replacement agent...")
+
+        # New session (replacement agent)
+        self.session_id = str(uuid.uuid4())
+        old_round_count = self.round_count
+        self.round_count = 0
+
+        # Build recovery summary from trajectory
+        recovery_summary = ""
+        if trajectory:
+            view = "evaluator" if "Evaluator" in type(self).__name__ else "planner"
+            recovery_summary = trajectory.render_narrative(view=view)
+
+        recovery_message = (
+            f"[RECOVERY] You are replacing the previous agent who became "
+            f"unavailable at round {old_round_count}.\n"
+            f"Here is a summary of progress so far:\n\n"
+            f"{recovery_summary}\n\n"
+            f"Continue the task:\n{user_message}"
+        )
+
+        # Re-write CLAUDE.md for new session
+        system = self.system_prompt
+        index = self._load_index()
+        if index:
+            system += f"\n\n# Experience Knowledge Base\n\n{index}"
+        claude_md = self.workspace / "CLAUDE.md"
+        claude_md.write_text(system)
+
+        return self.run(recovery_message)
+
     def _parse_claude_output(self, stdout: str) -> dict | str:
         """Parse the JSON output from claude CLI."""
         stdout = stdout.strip()
