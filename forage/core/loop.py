@@ -377,6 +377,10 @@ def run(
     shutil.copytree(workspace, artifacts_dir)
 
     _write_final_outputs(history, metrics, total_cost_usd, results_dir, artifacts_dir)
+
+    # v2: auto-generate HTML report
+    from ..report import generate_report
+    generate_report(results_dir / "trajectory.json")
     print(f"  Workspace copied to: {artifacts_dir}")
 
     # v2: restore stdout and close log
