@@ -10,12 +10,17 @@ build/
 # Environment
 .env
 
+# v1 archive (experiments, papers, logs)
+v1_data/
+
 # Experiment data (large, not tracked)
 output/
-experiments/
+/experiments/
 experiments_*/
-old/
 logs/
+
+# But track the forage/experiments/ Python package
+!forage/experiments/
 
 # Reference projects (large, external)
 references/

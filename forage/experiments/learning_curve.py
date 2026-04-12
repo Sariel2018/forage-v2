@@ -1,0 +1,122 @@
+# forage/experiments/learning_curve.py
+"""Learning curve experiment: run M+ on the same task multiple times,
+accumulating knowledge between runs."""
+
+import json
+import shutil
+import time
+from pathlib import Path
+
+from ..core.spec import TaskSpec
+from ..core.loop import run
+from ..core.knowledge import regenerate_index
+
+
+def run_learning_curve(
+    spec: TaskSpec,
+    num_runs: int = 6,
+    output_dir: str = "experiments",
+    knowledge_dir: str | None = None,
+    group: str = "M+",
+):
+    """Run a learning curve experiment.
+
+    Args:
+        spec: Task specification
+        num_runs: Number of sequential runs (learning trajectory)
+        output_dir: Base output directory
+        knowledge_dir: Path to knowledge/ directory (M+ starts empty, M uses static)
+        group: "M+" (accumulating), "M" (static), "M-exp" (no knowledge)
+    """
+    exp_dir = Path(output_dir) / spec.name / group
+    exp_dir.mkdir(parents=True, exist_ok=True)
+
+    # For M+: start with empty knowledge (or copy seed if provided)
+    if group == "M+":
+        work_knowledge = exp_dir / "knowledge"
+        if work_knowledge.exists():
+            shutil.rmtree(work_knowledge)
+        work_knowledge.mkdir(parents=True)
+        # Create empty structure
+        (work_knowledge / "universal").mkdir(exist_ok=True)
+        (work_knowledge / "web_scraping").mkdir(exist_ok=True)
+        (work_knowledge / "api").mkdir(exist_ok=True)
+        regenerate_index(work_knowledge)
+        active_knowledge = str(work_knowledge)
+    elif group == "M":
+        active_knowledge = knowledge_dir  # static, never changes
+    else:  # M-exp
+        active_knowledge = None
+
+    results = []
+
+    for run_id in range(1, num_runs + 1):
+        run_dir = exp_dir / f"run_{run_id:03d}"
+        print(f"\n{'#'*60}")
+        print(f"# Learning Curve: {spec.name} | {group} | Run {run_id}/{num_runs}")
+        print(f"{'#'*60}")
+
+        t0 = time.time()
+        history = run(
+            spec=spec,
+            output_dir=str(run_dir),
+            knowledge_dir=active_knowledge,
+            mode="full",
+        )
+        duration = time.time() - t0
+
+        # Collect results
+        if history:
+            last = history[-1]
+            run_result = {
+                "run_id": run_id,
+                "coverage": last.metrics.get("coverage_estimate", 0),
+                "records_total": last.records_total,
+                "denominator": last.metrics.get("denominator", "unknown"),
+                "cost_usd": sum(r.cost_usd for r in history),
+                "rounds": len(history),
+                "duration_seconds": duration,
+            }
+        else:
+            run_result = {
+                "run_id": run_id,
+                "coverage": 0,
+                "records_total": 0,
+                "denominator": "unknown",
+                "cost_usd": 0,
+                "rounds": 0,
+                "duration_seconds": duration,
+            }
+        results.append(run_result)
+
+        # Save incremental results
+        with open(exp_dir / "learning_curve.json", "w") as f:
+            json.dump(results, f, indent=2, default=str)
+
+        print(f"\n  Run {run_id} complete: coverage={run_result['coverage']:.1%}, "
+              f"cost=${run_result['cost_usd']:.2f}")
+
+        if group == "M+":
+            # Count knowledge entries
+            k_count = sum(1 for _ in Path(active_knowledge).rglob("*.md")
+                         if _.name != "INDEX.md")
+            print(f"  Knowledge entries: {k_count}")
+
+    # Write summary
+    _write_learning_summary(results, exp_dir, group)
+    return results
+
+
+def _write_learning_summary(results: list, exp_dir: Path, group: str):
+    """Write a markdown summary of the learning curve."""
+    lines = [f"# Learning Curve Summary -- {group}\n"]
+    lines.append("| Run | Coverage | Records | Denominator | Cost | Rounds |")
+    lines.append("|-----|----------|---------|-------------|------|--------|")
+    for r in results:
+        cov = r['coverage']
+        cov_str = f"{cov:.1%}" if isinstance(cov, (int, float)) else str(cov)
+        lines.append(
+            f"| {r['run_id']} | {cov_str} | {r['records_total']} | "
+            f"{r['denominator']} | ${r['cost_usd']:.2f} | {r['rounds']} |"
+        )
+    (exp_dir / "summary.md").write_text("\n".join(lines))
