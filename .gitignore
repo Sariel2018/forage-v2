@@ -22,6 +22,9 @@ logs/
 # But track the forage/experiments/ Python package
 !forage/experiments/
 
+# Benchmark data (large files, not tracked)
+benchmarks/
+
 # Reference projects (large, external)
 references/
 
