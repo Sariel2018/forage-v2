@@ -17,8 +17,6 @@ from .base import BaseAgent
 
 class EvaluatorAgent(BaseAgent):
 
-    max_turns = 25  # Evaluator needs more turns for denominator exploration
-
     @property
     def system_prompt(self) -> str:
         return """You are the Evaluator Agent in the Forage data collection system.
