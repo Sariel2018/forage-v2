@@ -56,11 +56,17 @@ def run(
       no_eval      — No independent Evaluator, Planner self-evaluates (M-no-eval group)
     """
     import tempfile
+    import sys
     workspace = Path(tempfile.mkdtemp(prefix=f"forage_{spec.name}_"))
     (workspace / "dataset").mkdir(exist_ok=True)
 
     results_dir = Path(output_dir) / spec.name
     results_dir.mkdir(parents=True, exist_ok=True)
+
+    # v2: tee stdout to forage.log for persistence
+    log_path = results_dir / "forage.log"
+    _log_tee = _LogTee(log_path)
+    sys.stdout = _log_tee
 
     print(f"  Isolated workspace: {workspace}")
     history: list[RoundResult] = []
@@ -370,7 +376,37 @@ def run(
 
     _write_final_outputs(history, metrics, total_cost_usd, results_dir, artifacts_dir)
     print(f"  Workspace copied to: {artifacts_dir}")
+
+    # v2: restore stdout and close log
+    sys.stdout = _log_tee.terminal
+    _log_tee.close()
+    print(f"  Log saved to: {log_path}")
+
     return history
+
+
+# --- Log tee ---
+
+
+class _LogTee:
+    """Tee stdout to both terminal and a log file (real-time flush)."""
+
+    def __init__(self, log_path: Path):
+        import sys
+        self.terminal = sys.stdout
+        self.log = open(log_path, "a", encoding="utf-8")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+        self.log.flush()
+
+    def flush(self):
+        self.terminal.flush()
+        self.log.flush()
+
+    def close(self):
+        self.log.close()
 
 
 # --- Context builders ---
@@ -428,6 +464,11 @@ def _build_evaluator_context(
             parts.append("\nPlanner strategy summaries (what methods were used — you cannot see their code):")
             for ps in planner_summaries:
                 parts.append(f"  R{ps['round']}: {ps['strategy_name']} → {ps.get('target_source', '?')}")
+
+    # Format reminder (prevents drift in persistent sessions)
+    parts.append("\n## IMPORTANT: Output format")
+    parts.append("Respond with a JSON object containing: denominator, denominator_source, denominator_confidence, discovery, decision, decision_reason.")
+    parts.append("Write eval.py to the workspace before responding.")
 
     return "\n".join(parts)
 
@@ -492,6 +533,11 @@ def _build_planner_context(
         parts.append("Add to your output JSON: \"decision\": \"continue\" or \"stop\", \"decision_reason\": \"...\"")
 
     parts.append("\nPropose a collection strategy and write collect.py.")
+
+    # Format reminder (prevents drift in persistent sessions)
+    parts.append("\n## IMPORTANT: Output format")
+    parts.append("Respond with a JSON object containing: strategy_name, strategy_description, target_source, expected_records, collect_script_path.")
+
     return "\n".join(parts)
 
 

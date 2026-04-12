@@ -26,7 +26,7 @@ class BaseAgent:
     - Working directory set to the isolated workspace
     """
 
-    max_turns = 30
+    max_turns = 15
 
     def __init__(self, workspace: str, knowledge_dir: str | None = None):
         self.workspace = Path(workspace)
