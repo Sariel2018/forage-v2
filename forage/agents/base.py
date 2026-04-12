@@ -139,6 +139,8 @@ class BaseAgent:
         If the persistent session crashes or times out, creates a new session
         with a recovery summary from the trajectory. Maintains method isolation
         in the summary (only includes role-appropriate data).
+
+        Returns dict with optional "_airdropped": True if recovery was used.
         """
         result = self.run(user_message)
 
@@ -177,6 +179,7 @@ class BaseAgent:
         claude_md.write_text(system)
 
         recovery_result = self.run(recovery_message)
+        recovery_result["_airdropped"] = True
 
         # If recovery also failed, reset for next round (fresh session)
         if "error" in recovery_result:

@@ -86,12 +86,14 @@ def run(
         _stage_knowledge(knowledge_dir, workspace, spec)
 
     # v2: trajectory tracking
+    from datetime import datetime, timezone
     trajectory = Trajectory(spec.name, {
         "name": spec.name,
         "description": spec.description,
         "topic": spec.topic,
         "coverage_target": spec.coverage.target,
     })
+    trajectory.data["started_at"] = datetime.now(timezone.utc).isoformat()
 
     print(f"\n{'#'*60}")
     print(f"# Forage v2: {spec.name}")
@@ -226,9 +228,11 @@ def run(
                 "denominator_confidence": eval_result.get("denominator_confidence", "?"),
                 "discovery": eval_result.get("discovery", ""),
                 "evaluator_decision": "stop",
+                "evaluator_airdropped": eval_result.get("_airdropped", False),
                 "strategy_name": "N/A",
                 "target_source": "N/A",
                 "strategy_description": "Stopped before planning",
+                "planner_airdropped": False,
                 "records_collected": 0,
                 "records_total": records_total,
                 "coverage": coverage,
@@ -338,9 +342,11 @@ def run(
             "denominator_confidence": eval_result.get("denominator_confidence", "?"),
             "discovery": eval_result.get("discovery", ""),
             "evaluator_decision": "stop" if should_stop else "continue",
+            "evaluator_airdropped": eval_result.get("_airdropped", False),
             "strategy_name": strategy.get("strategy_name", "?"),
             "target_source": strategy.get("target_source", "?"),
             "strategy_description": strategy.get("strategy_description", "?"),
+            "planner_airdropped": strategy.get("_airdropped", False),
             "records_collected": exec_result.records_collected if exec_result else 0,
             "records_total": records_total,
             "coverage": _safe_coverage(metrics),
@@ -357,6 +363,7 @@ def run(
             break
 
     # v2: save trajectory
+    trajectory.data["ended_at"] = datetime.now(timezone.utc).isoformat()
     trajectory.set_final_state({
         "decision": history[-1].decision if history else "unknown",
         "final_coverage": _safe_coverage(metrics),
