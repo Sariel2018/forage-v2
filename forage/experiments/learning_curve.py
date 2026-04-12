@@ -31,26 +31,33 @@ def run_learning_curve(
     exp_dir = Path(output_dir) / spec.name / group
     exp_dir.mkdir(parents=True, exist_ok=True)
 
-    # For M+: start with empty knowledge (or copy seed if provided)
+    # For M+: use accumulating knowledge (create empty if first run)
     if group == "M+":
         work_knowledge = exp_dir / "knowledge"
-        if work_knowledge.exists():
-            shutil.rmtree(work_knowledge)
-        work_knowledge.mkdir(parents=True)
-        # Create empty structure
-        (work_knowledge / "universal").mkdir(exist_ok=True)
-        (work_knowledge / "web_scraping").mkdir(exist_ok=True)
-        (work_knowledge / "api").mkdir(exist_ok=True)
-        regenerate_index(work_knowledge)
+        if not work_knowledge.exists():
+            work_knowledge.mkdir(parents=True)
+            (work_knowledge / "universal").mkdir(exist_ok=True)
+            (work_knowledge / "web_scraping").mkdir(exist_ok=True)
+            (work_knowledge / "api").mkdir(exist_ok=True)
+            regenerate_index(work_knowledge)
         active_knowledge = str(work_knowledge)
     elif group == "M":
         active_knowledge = knowledge_dir  # static, never changes
     else:  # M-exp
         active_knowledge = None
 
-    results = []
+    # Load existing results if resuming
+    results_file = exp_dir / "learning_curve.json"
+    if results_file.exists():
+        results = json.loads(results_file.read_text())
+    else:
+        results = []
 
-    for run_id in range(1, num_runs + 1):
+    # Auto-detect starting run number from existing directories
+    existing_runs = sorted(exp_dir.glob("run_*"))
+    start_run = len(existing_runs) + 1
+
+    for run_id in range(start_run, start_run + num_runs):
         run_dir = exp_dir / f"run_{run_id:03d}"
         print(f"\n{'#'*60}")
         print(f"# Learning Curve: {spec.name} | {group} | Run {run_id}/{num_runs}")
