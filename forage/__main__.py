@@ -50,6 +50,11 @@ def main():
     learn_parser.add_argument("--group", default="M+", choices=["M+", "M", "M-exp"],
                               help="Experiment group (default: M+)")
 
+    # --- forage report ---
+    report_parser = subparsers.add_parser("report", help="Generate HTML report from trajectory")
+    report_parser.add_argument("trajectory", help="Path to trajectory.json")
+    report_parser.add_argument("--output", default=None, help="Output HTML path (default: same dir as trajectory)")
+
     args = parser.parse_args()
 
     if args.command == "run":
@@ -78,6 +83,12 @@ def main():
             knowledge_dir=args.knowledge,
             group=args.group,
         )
+
+    elif args.command == "report":
+        from pathlib import Path
+        from .report import generate_report
+        output = Path(args.output) if args.output else None
+        generate_report(Path(args.trajectory), output)
 
     else:
         parser.print_help()
