@@ -49,6 +49,8 @@ def main():
     learn_parser.add_argument("--knowledge", default=None, help="Knowledge directory (for M group)")
     learn_parser.add_argument("--group", default="M+", choices=["M+", "M", "M-exp"],
                               help="Experiment group (default: M+)")
+    learn_parser.add_argument("--repeat", type=int, default=1,
+                              help="Repeat ID for this trajectory (default: 1)")
 
     # --- forage report ---
     report_parser = subparsers.add_parser("report", help="Generate HTML report from trajectory")
@@ -82,6 +84,7 @@ def main():
             output_dir=args.output,
             knowledge_dir=args.knowledge,
             group=args.group,
+            repeat_id=args.repeat,
         )
 
     elif args.command == "report":

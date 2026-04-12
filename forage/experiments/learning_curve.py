@@ -18,6 +18,7 @@ def run_learning_curve(
     output_dir: str = "experiments",
     knowledge_dir: str | None = None,
     group: str = "M+",
+    repeat_id: int = 1,
 ):
     """Run a learning curve experiment.
 
@@ -27,8 +28,10 @@ def run_learning_curve(
         output_dir: Base output directory
         knowledge_dir: Path to knowledge/ directory (M+ starts empty, M uses static)
         group: "M+" (accumulating), "M" (static), "M-exp" (no knowledge)
+        repeat_id: Which repeat this is (1, 2, 3...). Each repeat gets its own
+                   directory and independent knowledge accumulation.
     """
-    exp_dir = Path(output_dir) / spec.name / group
+    exp_dir = Path(output_dir) / spec.name / group / f"repeat_{repeat_id:02d}"
     exp_dir.mkdir(parents=True, exist_ok=True)
 
     # For M+: use accumulating knowledge (create empty if first run)
