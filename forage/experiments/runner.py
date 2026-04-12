@@ -230,7 +230,7 @@ def _write_spec_to_dir(spec: TaskSpec, run_dir: Path):
     """Write spec as YAML to the isolated run directory."""
     import yaml
     spec_dict = {
-        "task": {"name": spec.name, "description": spec.description},
+        "task": {"name": spec.name, "description": spec.description, "task_type": spec.task_type},
         "target": {
             "topic": spec.topic,
             "time_range": spec.time_range,

@@ -336,7 +336,7 @@ def run(
             "records_collected": exec_result.records_collected if exec_result else 0,
             "records_total": records_total,
             "coverage": _safe_coverage(metrics),
-            "error_count": getattr(exec_result, 'error_count', 0) if exec_result else 0,
+            "error_count": (1 if exec_result.error else 0) if exec_result else 0,
             "exit_code": exec_result.exit_code if exec_result else -1,
             "knowledge_files_read": {},
             "round_cost_usd": round_cost,

@@ -127,7 +127,7 @@ class BaseAgent:
             return self._parse_response(output)
 
         except subprocess.TimeoutExpired:
-            return {"error": "claude CLI timed out after 600s"}
+            return {"error": "claude CLI timed out after 1200s"}
         except Exception as e:
             return {"error": f"claude CLI error: {e}"}
         finally:
