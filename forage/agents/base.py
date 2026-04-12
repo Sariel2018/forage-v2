@@ -9,14 +9,19 @@ We don't need to define custom tools.
 
 import json
 import subprocess
+import uuid
 from pathlib import Path
 
 
 class BaseAgent:
     """Base class for Forage agents.
 
-    Each agent invocation is a separate `claude` CLI call with:
-    - A system prompt (via CLAUDE.md in the workspace)
+    Uses persistent sessions (explorer team mode): the agent remembers
+    everything within a run. First call creates a named session via
+    --session-id; subsequent calls resume it via --resume.
+
+    Each agent invocation is a `claude` CLI call with:
+    - A system prompt (via CLAUDE.md in the workspace, written on first call)
     - A user prompt describing the task
     - Working directory set to the isolated workspace
     """
@@ -29,13 +34,15 @@ class BaseAgent:
         self.knowledge_dir = knowledge_dir
         self.cost_usd = 0.0
         self.usage = {}  # full token usage from claude CLI
+        self.session_id = str(uuid.uuid4())
+        self.round_count = 0
 
     @property
     def system_prompt(self) -> str:
         raise NotImplementedError
 
     def _load_knowledge(self) -> str:
-        """Load knowledge files if available."""
+        """Load all knowledge files (fallback for recovery mode)."""
         if not self.knowledge_dir:
             return ""
         knowledge_path = Path(self.knowledge_dir)
@@ -46,23 +53,21 @@ class BaseAgent:
             texts.append(f"## {f.stem}\n\n{f.read_text()}")
         return "\n\n---\n\n".join(texts) if texts else ""
 
-    def run(self, user_message: str) -> dict:
-        """Run the agent via Claude Code CLI.
+    def _load_index(self) -> str:
+        """Load INDEX.md from knowledge_dir (v2: agents read details on demand)."""
+        if not self.knowledge_dir:
+            return ""
+        index_path = Path(self.knowledge_dir) / "INDEX.md"
+        if not index_path.is_file():
+            return ""
+        return index_path.read_text()
 
-        1. Write a CLAUDE.md with the system prompt to the workspace
-        2. Call `claude -p "user_message"` with cwd=workspace
-        3. Parse the output
+    def _build_command(self, user_message: str) -> list[str]:
+        """Build the claude CLI command with session persistence flags.
+
+        - First call (round_count == 0): --session-id UUID (creates session)
+        - Subsequent calls (round_count > 0): --resume UUID (resumes session)
         """
-        # Write system prompt as CLAUDE.md in workspace
-        system = self.system_prompt
-        knowledge = self._load_knowledge()
-        if knowledge:
-            system += f"\n\n# Experience Knowledge Base\n\n{knowledge}"
-
-        claude_md = self.workspace / "CLAUDE.md"
-        claude_md.write_text(system)
-
-        # Build the claude command
         cmd = [
             "claude",
             "-p", user_message,
@@ -70,6 +75,31 @@ class BaseAgent:
             "--max-turns", str(self.max_turns),
             "--dangerously-skip-permissions",
         ]
+
+        if self.round_count == 0:
+            cmd.extend(["--session-id", self.session_id])
+        else:
+            cmd.extend(["--resume", self.session_id])
+
+        return cmd
+
+    def run(self, user_message: str) -> dict:
+        """Run the agent via Claude Code CLI.
+
+        Uses persistent sessions (explorer team mode):
+        - First call: writes CLAUDE.md + uses --session-id
+        - Subsequent calls: reuses session via --resume (CLAUDE.md already there)
+        """
+        # Only write CLAUDE.md on first call — session persists it
+        if self.round_count == 0:
+            system = self.system_prompt
+            index = self._load_index()
+            if index:
+                system += f"\n\n# Experience Knowledge Base\n\n{index}"
+            claude_md = self.workspace / "CLAUDE.md"
+            claude_md.write_text(system)
+
+        cmd = self._build_command(user_message)
 
         try:
             result = subprocess.run(
@@ -101,8 +131,7 @@ class BaseAgent:
         except Exception as e:
             return {"error": f"claude CLI error: {e}"}
         finally:
-            # Clean up CLAUDE.md to avoid leaking system prompt
-            claude_md.unlink(missing_ok=True)
+            self.round_count += 1
 
     def _parse_claude_output(self, stdout: str) -> dict | str:
         """Parse the JSON output from claude CLI."""
