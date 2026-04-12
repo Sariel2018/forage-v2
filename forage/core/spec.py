@@ -57,6 +57,7 @@ class TaskSpec:
     budget: BudgetSpec
     risk: RiskSpec
     sources: SourcesSpec
+    task_type: str = "web_scraping"
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "TaskSpec":
@@ -79,4 +80,5 @@ class TaskSpec:
             budget=BudgetSpec(**raw["budget"]),
             risk=RiskSpec(**raw["risk"]),
             sources=SourcesSpec(**raw["sources"]),
+            task_type=task.get("task_type", "web_scraping"),
         )
