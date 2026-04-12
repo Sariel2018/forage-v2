@@ -176,7 +176,15 @@ class BaseAgent:
         claude_md = self.workspace / "CLAUDE.md"
         claude_md.write_text(system)
 
-        return self.run(recovery_message)
+        recovery_result = self.run(recovery_message)
+
+        # If recovery also failed, reset for next round (fresh session)
+        if "error" in recovery_result:
+            print(f"  Warning: Recovery also failed. Resetting for next round.")
+            self.session_id = str(uuid.uuid4())
+            self.round_count = 0
+
+        return recovery_result
 
     def _parse_claude_output(self, stdout: str) -> dict | str:
         """Parse the JSON output from claude CLI."""
