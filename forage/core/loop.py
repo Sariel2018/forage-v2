@@ -6,6 +6,11 @@ v2 changes (2026-04-03):
 - Richer context: denominator history, strategy summaries, discoveries
 - No keep/discard: data accumulates, eval.py handles dedup
 - Evaluator runs eval.py internally within its LLM call
+
+v2 loop restructure:
+- Agents created once per run (explorer team mode with persistent sessions)
+- Post-mortem phase: agents extract transferable lessons after run completes
+- Trajectory persistence: structured per-round data saved as JSON
 """
 
 import json
@@ -14,6 +19,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 
 from .spec import TaskSpec
+from .trajectory import Trajectory
 from ..agents.evaluator import EvaluatorAgent
 from ..agents.planner import PlannerAgent
 from ..agents.executor import execute_collection, run_eval_script
@@ -65,6 +71,22 @@ def run(
     eval_result_history: list[dict] = []
     planner_summaries: list[dict] = []
 
+    # v2: create agents ONCE per run (explorer team mode)
+    evaluator = EvaluatorAgent(workspace=str(workspace), knowledge_dir=knowledge_dir)
+    planner = PlannerAgent(workspace=str(workspace), knowledge_dir=knowledge_dir)
+
+    # v2: stage knowledge files to workspace
+    if knowledge_dir:
+        _stage_knowledge(knowledge_dir, workspace, spec)
+
+    # v2: trajectory tracking
+    trajectory = Trajectory(spec.name, {
+        "name": spec.name,
+        "description": spec.description,
+        "topic": spec.topic,
+        "coverage_target": spec.coverage.target,
+    })
+
     print(f"\n{'#'*60}")
     print(f"# Forage v2: {spec.name}")
     print(f"# Topic: {spec.topic}")
@@ -109,11 +131,6 @@ def run(
             # METHOD ISOLATION: hide collect.py before calling Evaluator (skip in no_isolation mode)
             if mode != "no_isolation":
                 _hide_file(workspace / "collect.py")
-
-            evaluator = EvaluatorAgent(
-                workspace=str(workspace),
-                knowledge_dir=knowledge_dir,
-            )
 
             eval_context = _build_evaluator_context(
                 spec, history, workspace, eval_result_history, planner_summaries,
@@ -192,6 +209,28 @@ def run(
             history.append(result)
             with open(results_dir / "history.jsonl", "a") as f:
                 f.write(json.dumps(asdict(result), default=str) + "\n")
+
+            # v2: record trajectory for early-stop round
+            trajectory.add_round({
+                "round_id": round_id,
+                "duration_seconds": duration,
+                "denominator": eval_result.get("denominator", "unknown"),
+                "denominator_source": eval_result.get("denominator_source", "?"),
+                "denominator_confidence": eval_result.get("denominator_confidence", "?"),
+                "discovery": eval_result.get("discovery", ""),
+                "evaluator_decision": "stop",
+                "strategy_name": "N/A",
+                "target_source": "N/A",
+                "strategy_description": "Stopped before planning",
+                "records_collected": 0,
+                "records_total": records_total,
+                "coverage": coverage,
+                "error_count": 0,
+                "exit_code": -1,
+                "knowledge_files_read": {},
+                "round_cost_usd": round_cost,
+            })
+
             print(f"\n  STOPPING: {eval_result.get('decision_reason', 'target reached')}")
             break
 
@@ -201,11 +240,6 @@ def run(
         # METHOD ISOLATION: hide eval.py before calling Planner (skip in no_isolation mode)
         if mode != "no_isolation":
             _hide_file(workspace / "eval.py")
-
-        planner = PlannerAgent(
-            workspace=str(workspace),
-            knowledge_dir=knowledge_dir,
-        )
 
         plan_context = _build_planner_context(
             spec, history, workspace, eval_result_history, mode,
@@ -287,11 +321,45 @@ def run(
         with open(results_dir / "history.jsonl", "a") as f:
             f.write(json.dumps(asdict(result), default=str) + "\n")
 
+        # v2: record trajectory
+        trajectory.add_round({
+            "round_id": round_id,
+            "duration_seconds": duration,
+            "denominator": eval_result.get("denominator", "unknown"),
+            "denominator_source": eval_result.get("denominator_source", "?"),
+            "denominator_confidence": eval_result.get("denominator_confidence", "?"),
+            "discovery": eval_result.get("discovery", ""),
+            "evaluator_decision": "stop" if should_stop else "continue",
+            "strategy_name": strategy.get("strategy_name", "?"),
+            "target_source": strategy.get("target_source", "?"),
+            "strategy_description": strategy.get("strategy_description", "?"),
+            "records_collected": exec_result.records_collected if exec_result else 0,
+            "records_total": records_total,
+            "coverage": _safe_coverage(metrics),
+            "error_count": getattr(exec_result, 'error_count', 0) if exec_result else 0,
+            "exit_code": exec_result.exit_code if exec_result else -1,
+            "knowledge_files_read": {},
+            "round_cost_usd": round_cost,
+        })
+
         print(f"\n  >> Records: {records_total} | Coverage: {coverage:.1%} | Time: {duration:.0f}s")
 
         if should_stop:
             print(f"\n  STOPPING: Planner decided to stop")
             break
+
+    # v2: save trajectory
+    trajectory.set_final_state({
+        "decision": history[-1].decision if history else "unknown",
+        "final_coverage": _safe_coverage(metrics),
+        "final_denominator": metrics.get("denominator", "unknown"),
+        "final_records": _count_total_records(workspace),
+    })
+    trajectory.save(results_dir / "trajectory.json")
+
+    # v2: post-mortem phase (only for "full" mode with knowledge_dir)
+    if mode == "full" and knowledge_dir:
+        _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, results_dir)
 
     # --- Final: copy workspace artifacts to results_dir ---
     import shutil
@@ -476,6 +544,79 @@ def _count_total_records(workspace: Path) -> int:
                 continue
             total += 1
     return total
+
+
+def _stage_knowledge(knowledge_dir: str, workspace: Path, spec: TaskSpec):
+    """Copy relevant knowledge files to agent workspace (v2)."""
+    import shutil
+    src = Path(knowledge_dir)
+    dst = workspace / "knowledge"
+    dst.mkdir(exist_ok=True)
+
+    # Always copy universal/
+    if (src / "universal").exists():
+        shutil.copytree(src / "universal", dst / "universal", dirs_exist_ok=True)
+
+    # Copy task-type-specific scope
+    task_type = getattr(spec, 'task_type', 'web_scraping')
+    if task_type and (src / task_type).exists():
+        shutil.copytree(src / task_type, dst / task_type, dirs_exist_ok=True)
+
+    # Copy INDEX.md
+    if (src / "INDEX.md").exists():
+        shutil.copy(src / "INDEX.md", dst / "INDEX.md")
+
+
+def _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, results_dir):
+    """Run post-mortem: each agent extracts lessons from the run (v2)."""
+    from .knowledge import write_knowledge_entry, regenerate_index
+
+    knowledge_path = Path(knowledge_dir)
+
+    print("\n  [Post-Mortem] Evaluator extracting lessons...")
+    eval_narrative = trajectory.render_narrative(view="evaluator")
+    eval_pm_message = (
+        f"# Post-Mortem\n\n"
+        f"The task is complete. Here is your trajectory:\n\n"
+        f"{eval_narrative}\n\n"
+        f"{evaluator.post_mortem_prompt}"
+    )
+    eval_lessons = evaluator.run(eval_pm_message)
+
+    print("  [Post-Mortem] Planner extracting lessons...")
+    plan_narrative = trajectory.render_narrative(view="planner")
+    plan_pm_message = (
+        f"# Post-Mortem\n\n"
+        f"The task is complete. Here is your trajectory:\n\n"
+        f"{plan_narrative}\n\n"
+        f"{planner.post_mortem_prompt}"
+    )
+    plan_lessons = planner.run(plan_pm_message)
+
+    # Extract and write lessons
+    all_lessons = []
+    for lessons_result in [eval_lessons, plan_lessons]:
+        if isinstance(lessons_result, dict) and "items" in lessons_result:
+            all_lessons.extend(lessons_result["items"])
+        elif isinstance(lessons_result, list):
+            all_lessons.extend(lessons_result)
+
+    for lesson in all_lessons:
+        if isinstance(lesson, dict) and "id" in lesson:
+            write_knowledge_entry(knowledge_path, lesson)
+
+    # Regenerate INDEX
+    if all_lessons:
+        regenerate_index(knowledge_path)
+
+    # Save knowledge snapshot
+    import shutil
+    snapshot_dir = results_dir / "knowledge_snapshot"
+    if snapshot_dir.exists():
+        shutil.rmtree(snapshot_dir)
+    shutil.copytree(knowledge_path, snapshot_dir)
+
+    print(f"\n  Post-mortem: extracted {len(all_lessons)} lessons")
 
 
 def _write_final_outputs(

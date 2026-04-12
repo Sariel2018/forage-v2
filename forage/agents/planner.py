@@ -75,3 +75,23 @@ Respond with a JSON object:
 
 Write collect.py to the workspace before responding.
 """
+
+    @property
+    def post_mortem_prompt(self) -> str:
+        return """You have just completed a data collection task. Review your trajectory
+and extract transferable lessons for future tasks.
+
+Focus on lessons that would help OTHER tasks, not task-specific details.
+Check the Knowledge Base Index first — if a similar lesson already exists,
+update it rather than creating a new one.
+
+For each lesson, output a JSON array:
+[{
+    "id": "snake_case_unique_id",
+    "scope": "universal | web_scraping | api",
+    "type": "advisory",
+    "summary": "One-line description",
+    "content": "Full markdown content of the lesson"
+}]
+
+Output ONLY the JSON array, nothing else."""
