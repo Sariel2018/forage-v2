@@ -96,8 +96,16 @@ def execute_collection(
 
     except subprocess.TimeoutExpired:
         duration = time.time() - t0
+        # Count records already written to disk before timeout
+        records = 0
+        for f in workspace.rglob("*.jsonl"):
+            try:
+                with open(f) as fh:
+                    records += sum(1 for _ in fh)
+            except (OSError, UnicodeDecodeError):
+                pass
         return ExecutionResult(
-            records_collected=0,
+            records_collected=records,
             requests_used=0,
             duration_seconds=duration,
             stdout="",
