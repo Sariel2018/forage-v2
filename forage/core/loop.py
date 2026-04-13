@@ -387,7 +387,8 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             "round_cost_usd": round_cost,
         })
 
-        print(f"\n  >> Records: {records_total} | Coverage: {coverage:.1%} | Time: {duration:.0f}s")
+        valid_records = metrics.get("total_valid_records", metrics.get("total_unique_matched", metrics.get("total_collected", records_total)))
+        print(f"\n  >> Records: {records_total} raw, {valid_records} valid | Coverage: {coverage:.1%} | Time: {duration:.0f}s")
 
         if should_stop:
             print(f"\n  STOPPING: Planner decided to stop")
