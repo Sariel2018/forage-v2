@@ -179,30 +179,26 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             if mode != "no_isolation":
                 _restore_file(workspace / "collect.py")
 
-            if eval_result.get("error"):
-                print(f"         ERROR: {eval_result['error']}")
-                if eval_result.get("stderr"):
-                    print(f"         STDERR: {eval_result['stderr'][:500]}")
-                print(f"         Skipping this round (agent call failed)")
-                continue
-
-            # Check if Evaluator returned a meaningful result
-            if "denominator" not in eval_result and "eval_script_path" not in eval_result and "text" in eval_result:
-                # Evaluator didn't return JSON, but check if it wrote eval.py anyway
+            # Unified fallback: if Evaluator response is bad, check workspace
+            eval_ok = "denominator" in eval_result or "eval_script_path" in eval_result
+            if not eval_ok:
+                reason = eval_result.get("error", eval_result.get("text", "unknown")[:200])
                 if (workspace / "eval.py").is_file():
-                    print(f"         WARNING: Evaluator returned text instead of JSON, but eval.py exists — proceeding with defaults")
-                    eval_result = {
-                        "eval_script_path": "eval.py",
-                        "denominator": "unknown",
-                        "denominator_source": "unknown",
-                        "denominator_confidence": "low",
-                        "decision": "continue",
-                        "decision_reason": "Evaluator did not return structured response, proceeding with eval.py found in workspace",
-                    }
+                    print(f"         WARNING: Evaluator response unusable ({reason[:100]}), but eval.py exists — proceeding")
+                    salvaged = evaluator._salvage_from_workspace()
+                    if salvaged:
+                        eval_result = salvaged
+                    else:
+                        eval_result = {
+                            "eval_script_path": "eval.py",
+                            "denominator": "unknown",
+                            "denominator_source": "unknown",
+                            "denominator_confidence": "low",
+                            "decision": "continue",
+                            "decision_reason": "Salvaged eval.py from workspace",
+                        }
                 else:
-                    print(f"         WARNING: Evaluator returned unstructured text and no eval.py found")
-                    print(f"         Text preview: {str(eval_result.get('text', ''))[:200]}")
-                    print(f"         Skipping this round")
+                    print(f"         WARNING: Evaluator failed and no eval.py on disk — skipping round")
                     continue
 
             # Track Evaluator's output
@@ -291,25 +287,18 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
         if mode != "no_isolation":
             _restore_file(workspace / "eval.py")
 
-        if plan_result.get("error"):
-            print(f"         ERROR: {plan_result['error']}")
-            if plan_result.get("stderr"):
-                print(f"         STDERR: {plan_result['stderr'][:500]}")
-            print(f"         Skipping this round (agent call failed)")
-            continue
-
-        if "strategy_name" not in plan_result and "collect_script_path" not in plan_result and "text" in plan_result:
-            # Planner returned text instead of JSON — check if collect.py is on disk
+        # Unified fallback: if Planner response is bad, check workspace
+        plan_ok = "strategy_name" in plan_result or "collect_script_path" in plan_result
+        if not plan_ok:
+            reason = plan_result.get("error", plan_result.get("text", "unknown")[:200])
             if (workspace / "collect.py").is_file():
-                print(f"         WARNING: Planner returned text instead of JSON, but collect.py exists — proceeding")
-                strategy = planner._salvage_from_workspace() or {"strategy_name": "text_response", "collect_script_path": "collect.py"}
+                print(f"         WARNING: Planner response unusable ({str(reason)[:100]}), but collect.py exists — proceeding")
+                strategy = planner._salvage_from_workspace() or {"strategy_name": "salvaged", "collect_script_path": "collect.py"}
             else:
-                print(f"         WARNING: Planner returned unstructured text, no JSON found")
-                print(f"         Text preview: {str(plan_result.get('text', ''))[:200]}")
-                print(f"         Skipping this round")
+                print(f"         WARNING: Planner failed and no collect.py on disk — skipping round")
                 continue
-
-        strategy = plan_result
+        else:
+            strategy = plan_result
         print(f"         Strategy: {strategy.get('strategy_name', '?')}")
 
         # Track Planner summary for Evaluator
