@@ -99,9 +99,22 @@ class BaseAgent:
         # Planner: collect.py (must be fresh)
         collect_py = self.workspace / "collect.py"
         if collect_py.is_file() and collect_py.stat().st_mtime > freshness_threshold:
+            # Try to extract strategy name from collect.py docstring
+            strategy_name = "salvaged_strategy"
+            strategy_desc = "Salvaged from workspace (CLI failed but collect.py written)"
+            try:
+                import ast
+                tree = ast.parse(collect_py.read_text())
+                docstring = ast.get_docstring(tree)
+                if docstring:
+                    first_line = docstring.strip().split("\n")[0]
+                    strategy_name = first_line[:100]
+                    strategy_desc = docstring[:300]
+            except Exception:
+                pass
             return {
-                "strategy_name": "salvaged_strategy",
-                "strategy_description": "Salvaged from workspace (CLI failed but collect.py written)",
+                "strategy_name": strategy_name,
+                "strategy_description": strategy_desc,
                 "collect_script_path": "collect.py",
                 "_salvaged": True,
             }
