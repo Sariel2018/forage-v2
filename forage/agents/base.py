@@ -74,6 +74,7 @@ class BaseAgent:
             "--output-format", "json",
             "--max-turns", str(self.max_turns),
             "--dangerously-skip-permissions",
+            "--disable-slash-commands",
         ]
 
         if self.round_count == 0:
