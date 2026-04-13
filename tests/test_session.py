@@ -59,7 +59,7 @@ def test_build_command_includes_base_flags():
     assert "-p" in cmd
     assert "hello" in cmd
     assert "--output-format" in cmd
-    assert "json" in cmd
+    assert "stream-json" in cmd
     assert "--max-turns" in cmd
     assert "--dangerously-skip-permissions" in cmd
 

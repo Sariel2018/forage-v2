@@ -135,6 +135,17 @@ class BaseAgent:
         # Save exit code
         (log_dir / f"{prefix}_exit.txt").write_text(str(result.returncode))
 
+    def _save_cli_output_raw(self, stdout_bytes, reason: str = ""):
+        """Save raw stdout on timeout/error (when subprocess.CompletedProcess isn't available)."""
+        agent_type = type(self).__name__.lower().replace("agent", "")
+        log_dir = self.workspace / "cli_logs"
+        log_dir.mkdir(exist_ok=True)
+        round_num = self.round_count + 1
+        prefix = f"r{round_num:02d}_{agent_type}"
+        stdout_str = stdout_bytes.decode("utf-8", errors="replace") if isinstance(stdout_bytes, bytes) else str(stdout_bytes)
+        (log_dir / f"{prefix}_stdout.json").write_text(stdout_str[-50000:])
+        (log_dir / f"{prefix}_exit.txt").write_text(f"timeout ({reason})")
+
     def _build_command(self, user_message: str) -> list[str]:
         """Build the claude CLI command with session persistence flags.
 
@@ -144,7 +155,8 @@ class BaseAgent:
         cmd = [
             "claude",
             "-p", user_message,
-            "--output-format", "json",
+            "--output-format", "stream-json",
+            "--verbose",
             "--max-turns", str(self.max_turns),
             "--dangerously-skip-permissions",
             "--disable-slash-commands",
@@ -233,7 +245,10 @@ class BaseAgent:
 
             return self._parse_response(output)
 
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as e:
+            # stream-json: partial stdout may be available even on timeout
+            if e.stdout:
+                self._save_cli_output_raw(e.stdout, "timeout")
             return {"error": "claude CLI timed out after 1200s"}
         except Exception as e:
             return {"error": f"claude CLI error: {e}"}
@@ -300,19 +315,38 @@ class BaseAgent:
         return recovery_result
 
     def _parse_claude_output(self, stdout: str) -> dict | str:
-        """Parse the JSON output from claude CLI."""
+        """Parse the stream-json output from claude CLI.
+
+        stream-json outputs one JSON object per line. The last line with
+        type="result" contains the same data as json mode.
+        """
         stdout = stdout.strip()
         if not stdout:
             return {"error": "empty output from claude CLI"}
 
+        # Find the result line (last line with type=result)
+        result_data = None
+        for line in stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                data = json.loads(line)
+                if isinstance(data, dict) and data.get("type") == "result":
+                    result_data = data
+            except json.JSONDecodeError:
+                continue
+
+        if result_data:
+            return result_data
+
+        # Fallback: try parsing as single JSON (backwards compat with json mode)
         try:
             data = json.loads(stdout)
-            # claude --output-format json returns {"result": "...", "cost_usd": ..., ...}
             if isinstance(data, dict) and "result" in data:
                 return data
             return data
         except json.JSONDecodeError:
-            # If not valid JSON, return as text
             return {"result": stdout}
 
     def _parse_response(self, output: dict | str) -> dict:
