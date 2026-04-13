@@ -44,21 +44,11 @@ target:
 coverage:
   target: 1.00
   mode: "soft"
-  dimensions:
-    - method_design       # preconditioner choice + justification
-    - matvec_efficiency   # matrix-vector product without forming full matrix
-    - correctness_proof   # mathematical proof that the method is correct
-    - complexity_analysis # complexity bounds better than O(n³r³)
-    - implementation      # working code + benchmark results
+  dimensions: []  # Evaluator discovers what "complete" means from the problem statement
 
 quality:
   min_text_length: 0
-  required_fields:
-    - preconditioner_design
-    - matvec_algorithm
-    - complexity_bound
-    - implementation_code
-    - benchmark_results
+  required_fields: []  # Evaluator defines via eval_contract.md
 
 budget:
   max_rounds: 8
