@@ -70,20 +70,19 @@ def execute_collection(
                 except json.JSONDecodeError:
                     pass
 
-        # If no FORAGE_RESULT line, count JSONL files recursively
+        # If no FORAGE_RESULT line, count files in dataset/ only
         if records == 0:
-            for f in workspace.rglob("*.jsonl"):
-                try:
-                    with open(f) as fh:
-                        records += sum(1 for _ in fh)
-                except (OSError, UnicodeDecodeError):
-                    pass
-        # Also count individual .json files if no JSONL found
-        if records == 0:
-            for f in workspace.rglob("*.json"):
-                if f.name in ("metrics.json", "summary.json"):
-                    continue
-                records += 1
+            dataset_dir = workspace / "dataset"
+            if dataset_dir.is_dir():
+                for f in dataset_dir.rglob("*.jsonl"):
+                    try:
+                        with open(f) as fh:
+                            records += sum(1 for _ in fh)
+                    except (OSError, UnicodeDecodeError):
+                        pass
+                if records == 0:
+                    for f in dataset_dir.rglob("*.json"):
+                        records += 1
 
         return ExecutionResult(
             records_collected=records,
@@ -96,14 +95,16 @@ def execute_collection(
 
     except subprocess.TimeoutExpired:
         duration = time.time() - t0
-        # Count records already written to disk before timeout
+        # Count records already written to dataset/ before timeout
         records = 0
-        for f in workspace.rglob("*.jsonl"):
-            try:
-                with open(f) as fh:
-                    records += sum(1 for _ in fh)
-            except (OSError, UnicodeDecodeError):
-                pass
+        dataset_dir = workspace / "dataset"
+        if dataset_dir.is_dir():
+            for f in dataset_dir.rglob("*.jsonl"):
+                try:
+                    with open(f) as fh:
+                        records += sum(1 for _ in fh)
+                except (OSError, UnicodeDecodeError):
+                    pass
         return ExecutionResult(
             records_collected=records,
             requests_used=0,

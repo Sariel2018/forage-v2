@@ -12,8 +12,8 @@ def test_record_count_nested_dataset():
         # Write a trivial action.py that does nothing (no FORAGE_RESULT line)
         (ws / "action.py").write_text("print('done')\n")
 
-        # Place JSONL in a nested path (simulating agent behavior)
-        nested = ws / "workspace" / "dataset"
+        # Place JSONL in dataset/ (where executor looks)
+        nested = ws / "dataset"
         nested.mkdir(parents=True)
         with open(nested / "data.jsonl", "w") as f:
             for i in range(5):
