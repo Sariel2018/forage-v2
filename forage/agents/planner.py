@@ -93,7 +93,7 @@ update it rather than creating a new one.
 For each lesson, output a JSON array:
 [{
     "id": "snake_case_unique_id",
-    "scope": "<choose or create a scope that fits: e.g. universal, web_scraping, api, math_research, or any other>",
+    "scope": "<be specific: use 'universal' ONLY for lessons applicable to ANY task. Otherwise create a domain scope like 'web_scraping', 'api', 'math_research', 'numerical_methods', etc.>",
     "type": "advisory",
     "summary": "One-line description",
     "content": "Full markdown content of the lesson"
