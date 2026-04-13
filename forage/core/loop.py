@@ -104,7 +104,8 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
     trajectory.data["run_config"] = {
         "mode": mode,
         "max_rounds": spec.budget.max_rounds,
-        "max_turns_per_agent": evaluator.max_turns,
+        "max_turns_evaluator": evaluator.max_turns,
+        "max_turns_planner": planner.max_turns,
         "agent_timeout_seconds": 1200,
         "max_requests": spec.budget.max_requests,
         "max_runtime_minutes": spec.budget.max_runtime_minutes,
