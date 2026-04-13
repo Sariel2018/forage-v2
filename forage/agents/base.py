@@ -147,6 +147,7 @@ class BaseAgent:
             "--max-turns", str(self.max_turns),
             "--dangerously-skip-permissions",
             "--disable-slash-commands",
+            "--effort", "medium",
         ]
 
         if self.round_count == 0:

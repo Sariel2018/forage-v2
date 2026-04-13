@@ -106,6 +106,7 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
         "max_rounds": spec.budget.max_rounds,
         "max_turns_evaluator": evaluator.max_turns,
         "max_turns_planner": planner.max_turns,
+        "effort": "medium",
         "agent_timeout_seconds": 1200,
         "max_requests": spec.budget.max_requests,
         "max_runtime_minutes": spec.budget.max_runtime_minutes,
