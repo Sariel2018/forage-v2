@@ -72,6 +72,7 @@ def run_learning_curve(
             output_dir=str(run_dir),
             knowledge_dir=active_knowledge,
             mode="full",
+            enable_post_mortem=(group == "M+"),
         )
         duration = time.time() - t0
 

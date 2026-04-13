@@ -46,6 +46,7 @@ def run(
     output_dir: str = "output",
     knowledge_dir: str | None = None,
     mode: str = "full",  # "full" | "no_isolation" | "freeze_eval" | "no_eval"
+    enable_post_mortem: bool = True,
 ) -> list[RoundResult]:
     """Main Forage loop v2.
 
@@ -69,13 +70,13 @@ def run(
     sys.stdout = _log_tee
 
     try:
-        return _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path)
+        return _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enable_post_mortem)
     finally:
         sys.stdout = _log_tee.terminal
         _log_tee.close()
 
 
-def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
+def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enable_post_mortem=True):
     """Inner run body — separated so stdout tee is always restored via try/finally."""
     from datetime import datetime, timezone
 
@@ -402,8 +403,8 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
     })
     trajectory.save(results_dir / "trajectory.json")
 
-    # v2: post-mortem phase (only for "full" mode with knowledge_dir)
-    if mode == "full" and knowledge_dir:
+    # v2: post-mortem phase (only for M+ group — M/M-exp don't accumulate)
+    if mode == "full" and knowledge_dir and enable_post_mortem:
         pm_cost = _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, results_dir)
         total_cost_usd += pm_cost
         trajectory.data["total_cost_usd"] += pm_cost
