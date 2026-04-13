@@ -395,8 +395,7 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
     if artifacts_dir.exists():
         shutil.rmtree(artifacts_dir)
     shutil.copytree(workspace, artifacts_dir)
-    # Note: NOT cleaning up temp workspace — useful for debugging.
-    # Old workspaces accumulate in /tmp/ but OS cleans on reboot.
+    shutil.rmtree(workspace, ignore_errors=True)  # clean up; debug via results_dir/workspace/
 
     _write_final_outputs(history, metrics, total_cost_usd, results_dir, artifacts_dir)
 
