@@ -299,10 +299,15 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             continue
 
         if "strategy_name" not in plan_result and "collect_script_path" not in plan_result and "text" in plan_result:
-            print(f"         WARNING: Planner returned unstructured text, no JSON found")
-            print(f"         Text preview: {str(plan_result.get('text', ''))[:200]}")
-            print(f"         Skipping this round")
-            continue
+            # Planner returned text instead of JSON — check if collect.py is on disk
+            if (workspace / "collect.py").is_file():
+                print(f"         WARNING: Planner returned text instead of JSON, but collect.py exists — proceeding")
+                strategy = planner._salvage_from_workspace() or {"strategy_name": "text_response", "collect_script_path": "collect.py"}
+            else:
+                print(f"         WARNING: Planner returned unstructured text, no JSON found")
+                print(f"         Text preview: {str(plan_result.get('text', ''))[:200]}")
+                print(f"         Skipping this round")
+                continue
 
         strategy = plan_result
         print(f"         Strategy: {strategy.get('strategy_name', '?')}")
