@@ -353,6 +353,15 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
         with open(results_dir / "history.jsonl", "a") as f:
             f.write(json.dumps(asdict(result), default=str) + "\n")
 
+        # v2: snapshot scripts per round (track strategy evolution)
+        round_snapshots = results_dir / "round_snapshots" / f"r{round_id:02d}"
+        round_snapshots.mkdir(parents=True, exist_ok=True)
+        for script_name in ["collect.py", "eval.py"]:
+            script_path = workspace / script_name
+            if script_path.is_file():
+                import shutil
+                shutil.copy(script_path, round_snapshots / script_name)
+
         # v2: record trajectory
         trajectory.add_round({
             "round_id": round_id,
