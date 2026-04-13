@@ -128,7 +128,7 @@ def generate_report(trajectory_path: Path, output_path: Path | None = None):
         line: {{color: '#4a6741', width: 2}},
         name: 'Coverage %'
     }}], {{
-        yaxis: {{title: 'Coverage %', range: [0, 105]}},
+        yaxis: {{title: 'Coverage %'}},
         xaxis: {{title: 'Round', dtick: 1}},
         margin: {{t: 20}},
         paper_bgcolor: '#faf8f5',
