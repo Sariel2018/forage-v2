@@ -66,13 +66,22 @@ class BaseAgent:
         """Check if agent completed work on disk despite CLI failure.
 
         Returns a fallback result dict if work is found, None otherwise.
-        Subclasses can override to check for their specific output files.
+        Only salvages if files were modified AFTER the CLI call started
+        (prevents returning stale data from previous rounds).
         """
         import json as _json
-        # Evaluator: eval.py + metrics.json
+        import time
+
+        # Threshold: files must be modified within the last 25 min
+        # (max_turns=15 @ ~1min each + buffer)
+        freshness_threshold = time.time() - 1500
+
+        # Evaluator: eval.py + metrics.json (both must be fresh)
         eval_py = self.workspace / "eval.py"
         metrics_json = self.workspace / "metrics.json"
-        if eval_py.is_file() and metrics_json.is_file():
+        if (eval_py.is_file() and metrics_json.is_file()
+                and eval_py.stat().st_mtime > freshness_threshold
+                and metrics_json.stat().st_mtime > freshness_threshold):
             try:
                 metrics = _json.loads(metrics_json.read_text())
                 return {
@@ -86,9 +95,10 @@ class BaseAgent:
                 }
             except (ValueError, KeyError):
                 pass
-        # Planner: collect.py
+
+        # Planner: collect.py (must be fresh)
         collect_py = self.workspace / "collect.py"
-        if collect_py.is_file():
+        if collect_py.is_file() and collect_py.stat().st_mtime > freshness_threshold:
             return {
                 "strategy_name": "salvaged_strategy",
                 "strategy_description": "Salvaged from workspace (CLI failed but collect.py written)",
