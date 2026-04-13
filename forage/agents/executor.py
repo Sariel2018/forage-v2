@@ -1,7 +1,7 @@
-"""Executor: runs the collection script produced by the Planner.
+"""Executor: runs the action script produced by the Planner.
 
 Unlike Evaluator and Planner, the Executor is NOT an LLM agent.
-It simply runs collect.py and monitors execution (timeout, request budget, errors).
+It simply runs action.py and monitors execution (timeout, request budget, errors).
 This keeps execution deterministic and auditable.
 """
 
@@ -25,7 +25,7 @@ class ExecutionResult:
 
 def execute_collection(
     workspace: Path,
-    script_path: str = "collect.py",
+    script_path: str = "action.py",
     timeout: int = 1800,  # 30 min default
 ) -> ExecutionResult:
     """Run the collection script and return results.

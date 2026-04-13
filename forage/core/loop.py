@@ -2,7 +2,7 @@
 
 v2 changes (2026-04-03):
 - Evaluator is auditor + stop decision maker (Selector removed)
-- Method isolation: eval.py hidden from Planner, collect.py hidden from Evaluator
+- Method isolation: eval.py hidden from Planner, action.py hidden from Evaluator
 - Richer context: denominator history, strategy summaries, discoveries
 - No keep/discard: data accumulates, eval.py handles dedup
 - Evaluator runs eval.py internally within its LLM call
@@ -164,9 +164,9 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             label = "exploring data universe" if round_id == 1 else "auditing results"
             print(f"\n  [1/3] Evaluator: {label}...")
 
-            # METHOD ISOLATION: hide collect.py before calling Evaluator (skip in no_isolation mode)
+            # METHOD ISOLATION: hide action.py before calling Evaluator (skip in no_isolation mode)
             if mode != "no_isolation":
-                _hide_file(workspace / "collect.py")
+                _hide_file(workspace / "action.py")
 
             eval_context = _build_evaluator_context(
                 spec, history, workspace, eval_result_history, planner_summaries,
@@ -175,9 +175,9 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             round_cost += evaluator.cost_usd
             _merge_usage(round_usage, evaluator.usage)
 
-            # Restore collect.py
+            # Restore action.py
             if mode != "no_isolation":
-                _restore_file(workspace / "collect.py")
+                _restore_file(workspace / "action.py")
 
             # Unified fallback: if Evaluator response is bad, check workspace
             eval_ok = "denominator" in eval_result or "eval_script_path" in eval_result
@@ -288,18 +288,18 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             _restore_file(workspace / "eval.py")
 
         # Unified fallback: if Planner response is bad, check workspace
-        plan_ok = "strategy_name" in plan_result or "collect_script_path" in plan_result
+        plan_ok = "strategy_name" in plan_result or "action_script_path" in plan_result
         if not plan_ok:
             reason = plan_result.get("error", plan_result.get("text", "unknown")[:200])
-            if (workspace / "collect.py").is_file():
-                print(f"         WARNING: Planner response unusable ({str(reason)[:100]}), but collect.py exists — proceeding")
-                strategy = planner._salvage_from_workspace() or {"strategy_name": "salvaged", "collect_script_path": "collect.py"}
+            if (workspace / "action.py").is_file():
+                print(f"         WARNING: Planner response unusable ({str(reason)[:100]}), but action.py exists — proceeding")
+                strategy = planner._salvage_from_workspace() or {"strategy_name": "salvaged", "action_script_path": "action.py"}
             elif any((workspace / "dataset").rglob("*")):
-                # Math tasks: Planner may write directly to dataset/ without collect.py
-                print(f"         WARNING: No collect.py but dataset/ has content — skipping Executor, running eval.py only")
-                strategy = {"strategy_name": "direct_write", "collect_script_path": None, "_skip_executor": True}
+                # Math tasks: Planner may write directly to dataset/ without action.py
+                print(f"         WARNING: No action.py but dataset/ has content — skipping Executor, running eval.py only")
+                strategy = {"strategy_name": "direct_write", "action_script_path": None, "_skip_executor": True}
             else:
-                print(f"         WARNING: Planner failed, no collect.py, no dataset — skipping round")
+                print(f"         WARNING: Planner failed, no action.py, no dataset — skipping round")
                 continue
         else:
             strategy = plan_result
@@ -326,10 +326,10 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             )
         else:
             print("\n  [3/3] Executor: running collection script...")
-            collect_script = strategy.get("collect_script_path", "collect.py")
+            action_script = strategy.get("action_script_path", "action.py")
             exec_result = execute_collection(
                 workspace=workspace,
-                script_path=collect_script,
+                script_path=action_script,
                 timeout=spec.budget.max_runtime_minutes * 60 // spec.budget.max_rounds,
             )
             print(f"         Collected: {exec_result.records_collected} records ({exec_result.duration_seconds:.0f}s)")
@@ -369,7 +369,7 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
         # v2: snapshot scripts per round (track strategy evolution)
         round_snapshots = results_dir / "round_snapshots" / f"r{round_id:02d}"
         round_snapshots.mkdir(parents=True, exist_ok=True)
-        for script_name in ["collect.py", "eval.py"]:
+        for script_name in ["action.py", "eval.py"]:
             script_path = workspace / script_name
             if script_path.is_file():
                 import shutil
@@ -587,11 +587,11 @@ def _build_planner_context(
         parts.append("You must also decide whether to stop or continue collecting.")
         parts.append("Add to your output JSON: \"decision\": \"continue\" or \"stop\", \"decision_reason\": \"...\"")
 
-    parts.append("\nPropose a collection strategy and write collect.py.")
+    parts.append("\nPropose a collection strategy and write action.py.")
 
     # Format reminder (prevents drift in persistent sessions)
     parts.append("\n## IMPORTANT: Output format")
-    parts.append("Respond with a JSON object containing: strategy_name, strategy_description, target_source, expected_records, collect_script_path.")
+    parts.append("Respond with a JSON object containing: strategy_name, strategy_description, target_source, expected_records, action_script_path.")
 
     return "\n".join(parts)
 

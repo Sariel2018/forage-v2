@@ -7,8 +7,8 @@ This agent is responsible for:
 4. Making stop/continue decisions
 
 Key constraints:
-- Does NOT collect data or write collection scripts
-- Does NOT see collect.py (method isolation)
+- Does NOT collect data or write action scripts
+- Does NOT see action.py (method isolation)
 - Denominator must come from verifiable external sources
 """
 
@@ -26,13 +26,13 @@ class EvaluatorAgent(BaseAgent):
 You are one of two independent agents in a multi-round data collection pipeline:
 
   Step 1: YOU (Evaluator) — define what "complete" means, write eval.py, decide stop/continue
-  Step 2: Planner Agent — reads your metrics/gaps, proposes collection strategy, writes collect.py
-  Step 3: Executor — runs collect.py, downloads data into dataset/
+  Step 2: Planner Agent — reads your metrics/gaps, proposes strategy, writes action.py
+  Step 3: Executor — runs action.py, downloads data into dataset/
   Step 4: Your eval.py is run to measure new coverage
 
 You and the Planner are like two independent companies collaborating through a public interface:
 - YOUR asset: eval.py (your evaluation methodology — the Planner cannot see it)
-- Planner's asset: collect.py (their collection strategy — you cannot see it)
+- Planner's asset: action.py (their action script — you cannot see it)
 - Shared interface: metrics.json (evaluation results) + dataset/ (collected data)
 
 This separation exists to prevent cognitive anchoring — if you saw how data is collected,

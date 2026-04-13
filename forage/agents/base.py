@@ -97,15 +97,15 @@ class BaseAgent:
             except (ValueError, KeyError):
                 pass
 
-        # Planner: collect.py (must be fresh)
-        collect_py = self.workspace / "collect.py"
-        if collect_py.is_file() and collect_py.stat().st_mtime > freshness_threshold:
-            # Try to extract strategy name from collect.py docstring
+        # Planner: action.py (must be fresh)
+        action_py = self.workspace / "action.py"
+        if action_py.is_file() and action_py.stat().st_mtime > freshness_threshold:
+            # Try to extract strategy name from action.py docstring
             strategy_name = "salvaged_strategy"
-            strategy_desc = "Salvaged from workspace (CLI failed but collect.py written)"
+            strategy_desc = "Salvaged from workspace (CLI failed but action.py written)"
             try:
                 import ast
-                tree = ast.parse(collect_py.read_text())
+                tree = ast.parse(action_py.read_text())
                 docstring = ast.get_docstring(tree)
                 if docstring:
                     first_line = docstring.strip().split("\n")[0]
@@ -116,7 +116,7 @@ class BaseAgent:
             return {
                 "strategy_name": strategy_name,
                 "strategy_description": strategy_desc,
-                "collect_script_path": "collect.py",
+                "action_script_path": "action.py",
                 "_salvaged": True,
             }
         return None
@@ -271,7 +271,7 @@ class BaseAgent:
             return result
 
         # Before airdroping, check if agent already completed work on disk
-        # (e.g., CLI crashed on output but eval.py/collect.py were written)
+        # (e.g., CLI crashed on output but eval.py/action.py were written)
         workspace_result = self._salvage_from_workspace()
         if workspace_result:
             print(f"  Warning: Agent CLI failed ({result['error']}) but work found on disk — salvaging")

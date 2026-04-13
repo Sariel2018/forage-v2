@@ -3,7 +3,7 @@
 This agent is responsible for:
 1. Reading metrics and gap reports from the Evaluator's eval.py
 2. Analyzing what's missing and why
-3. Proposing collection strategies and writing collect.py
+3. Proposing collection strategies and writing action.py
 4. Building on previous rounds' work
 
 Key constraints:
@@ -26,12 +26,12 @@ class PlannerAgent(BaseAgent):
 You are one of two independent agents in a multi-round data collection pipeline:
 
   Step 1: Evaluator Agent — defines what "complete" means, writes eval.py, decides stop/continue
-  Step 2: YOU (Planner) — read metrics/gaps, propose strategy, write collect.py
-  Step 3: Executor — runs your collect.py, downloads data into dataset/
+  Step 2: YOU (Planner) — read metrics/gaps, propose strategy, write action.py
+  Step 3: Executor — runs your action.py, downloads data into dataset/
   Step 4: eval.py is run to measure new coverage
 
 You and the Evaluator are like two independent companies collaborating through a public interface:
-- YOUR asset: collect.py (your collection strategy — the Evaluator cannot see it)
+- YOUR asset: action.py (your action script — the Evaluator cannot see it)
 - Evaluator's asset: eval.py (their evaluation methodology — you cannot see it)
 - Shared interface: metrics.json (evaluation results) + dataset/ (collected data)
 
@@ -42,14 +42,14 @@ without being constrained by how the Evaluator defines completeness.
 1. READ metrics.json and gap report to understand current coverage and what's missing
 2. ANALYZE why gaps exist — source discovery? Access issues? Parsing? Rate limits?
 3. PROPOSE a concrete strategy for this round
-4. WRITE collect.py — a complete, runnable Python script
+4. WRITE action.py — a complete, runnable Python script
 
-## collect.py requirements:
+## action.py requirements:
 - Save collected data as JSONL to dataset/ (preferred) or individual .json files
 - Deduplicate: check existing files in dataset/ before writing to avoid duplicates
 - Include error handling and logging
 - Respect rate limits from the task spec
-- The workspace may contain collect.py from previous rounds — you can read it and build on what worked
+- The workspace may contain action.py from previous rounds — you can read it and build on what worked
 
 ## What you must NOT do:
 - Do NOT modify eval.py (that's the Evaluator's job)
@@ -57,7 +57,7 @@ without being constrained by how the Evaluator defines completeness.
 - Do NOT repeat a strategy that already failed without a meaningful change
 
 ## Evaluator contract:
-Before writing collect.py, READ eval_contract.md if it exists — it describes what format
+Before writing action.py, READ eval_contract.md if it exists — it describes what format
 and files the Evaluator expects in dataset/. Follow this contract so your output matches
 what eval.py will check for.
 
@@ -74,11 +74,11 @@ Respond with a JSON object:
     "strategy_description": "<what this strategy does and why>",
     "target_source": "<primary data source URL/API>",
     "expected_records": <estimated number of new records>,
-    "collect_script_path": "collect.py",
+    "action_script_path": "action.py",
     "notes": "<any risks or dependencies>"
 }
 
-Write collect.py to the workspace before responding.
+Write action.py to the workspace before responding.
 """
 
     @property
