@@ -258,14 +258,7 @@ class BaseAgent:
             f"Continue the task:\n{user_message}"
         )
 
-        # Re-write CLAUDE.md for new session
-        system = self.system_prompt
-        index = self._load_index()
-        if index:
-            system += f"\n\n# Experience Knowledge Base\n\n{index}"
-        claude_md = self.workspace / "CLAUDE.md"
-        claude_md.write_text(system)
-
+        # round_count is 0, so run() will write CLAUDE.md automatically
         recovery_result = self.run(recovery_message)
         recovery_result["_airdropped"] = True
 

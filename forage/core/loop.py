@@ -133,6 +133,8 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
             # M-co-eval: frozen after Round 1
             print("\n  [1/3] Evaluator: FROZEN (using round 1 eval.py)")
             metrics = run_eval_script(workspace, "eval.py")
+            if metrics.get("error"):
+                print(f"         ERROR: eval.py failed: {metrics['error']}")
             coverage = _safe_coverage(metrics)
             print(f"         Coverage: {coverage:.1%}")
             # Hardcoded stop for frozen mode
@@ -383,7 +385,9 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
 
     # v2: post-mortem phase (only for "full" mode with knowledge_dir)
     if mode == "full" and knowledge_dir:
-        _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, results_dir)
+        pm_cost = _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, results_dir)
+        total_cost_usd += pm_cost
+        trajectory.data["total_cost_usd"] += pm_cost
 
     # --- Final: copy workspace artifacts to results_dir ---
     import shutil
@@ -391,6 +395,7 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
     if artifacts_dir.exists():
         shutil.rmtree(artifacts_dir)
     shutil.copytree(workspace, artifacts_dir)
+    shutil.rmtree(workspace, ignore_errors=True)  # clean up temp workspace
 
     _write_final_outputs(history, metrics, total_cost_usd, results_dir, artifacts_dir)
 
@@ -647,6 +652,7 @@ def _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, r
         f"{evaluator.post_mortem_prompt}"
     )
     eval_lessons = evaluator.run(eval_pm_message)
+    pm_cost = evaluator.cost_usd
 
     print("  [Post-Mortem] Planner extracting lessons...")
     plan_narrative = trajectory.render_narrative(view="planner")
@@ -657,6 +663,7 @@ def _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, r
         f"{planner.post_mortem_prompt}"
     )
     plan_lessons = planner.run(plan_pm_message)
+    pm_cost += planner.cost_usd
 
     # Extract and write lessons
     all_lessons = []
@@ -681,7 +688,8 @@ def _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, r
         shutil.rmtree(snapshot_dir)
     shutil.copytree(knowledge_path, snapshot_dir)
 
-    print(f"\n  Post-mortem: extracted {len(all_lessons)} lessons")
+    print(f"\n  Post-mortem: extracted {len(all_lessons)} lessons, cost=${pm_cost:.2f}")
+    return pm_cost
 
 
 def _write_final_outputs(
