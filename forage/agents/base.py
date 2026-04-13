@@ -150,6 +150,8 @@ class BaseAgent:
             return result
 
         print(f"  Warning: Agent session failed: {result['error']}")
+        if result.get("stderr"):
+            print(f"  STDERR: {result['stderr'][:500]}")
         print(f"  Airdropping replacement agent...")
 
         # New session (replacement agent)
