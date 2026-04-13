@@ -167,6 +167,7 @@ def _run_group(spec, group, repeats, exp_dir, knowledge_dir):
                     output_dir=str(run_dir),
                     knowledge_dir=run_knowledge,
                     mode=mode,
+                    enable_post_mortem=False,  # v1 runner doesn't accumulate knowledge
                 )
                 duration = time.time() - t0
                 run_result = {

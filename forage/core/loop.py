@@ -401,13 +401,13 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
         "final_denominator": metrics.get("denominator", "unknown"),
         "final_records": _count_total_records(workspace),
     })
-    trajectory.save(results_dir / "trajectory.json")
-
     # v2: post-mortem phase (only for M+ group — M/M-exp don't accumulate)
     if mode == "full" and knowledge_dir and enable_post_mortem:
         pm_cost = _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, results_dir)
         total_cost_usd += pm_cost
         trajectory.data["total_cost_usd"] += pm_cost
+
+    trajectory.save(results_dir / "trajectory.json")
 
     # --- Final: copy workspace artifacts to results_dir ---
     import shutil
