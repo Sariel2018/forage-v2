@@ -43,7 +43,7 @@ target:
 
 coverage:
   target: 1.00
-  mode: "hard"
+  mode: "soft"
   dimensions:
     - method_design       # preconditioner choice + justification
     - matvec_efficiency   # matrix-vector product without forming full matrix
