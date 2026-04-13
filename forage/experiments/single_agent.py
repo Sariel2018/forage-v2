@@ -74,9 +74,12 @@ Start now. Work in the current directory.
     cmd = [
         "claude",
         "-p", prompt,
-        "--output-format", "json",
+        "--output-format", "stream-json",
+        "--verbose",
         "--max-turns", "50",
         "--dangerously-skip-permissions",
+        "--disable-slash-commands",
+        "--effort", "medium",
     ]
 
     try:
@@ -89,12 +92,20 @@ Start now. Work in the current directory.
         )
         duration = time.time() - t0
 
-        # Parse output
+        # Parse stream-json output (find last type=result line)
         output = {}
-        if result.stdout.strip():
-            try:
-                output = json.loads(result.stdout)
-            except json.JSONDecodeError:
+        if result.stdout and result.stdout.strip():
+            for line in result.stdout.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    data = json.loads(line)
+                    if isinstance(data, dict) and data.get("type") == "result":
+                        output = data
+                except json.JSONDecodeError:
+                    continue
+            if not output:
                 output = {"result": result.stdout[-2000:]}
 
         # Count records in dataset/
@@ -102,7 +113,8 @@ Start now. Work in the current directory.
         dataset_dir = workspace / "dataset"
         if dataset_dir.is_dir():
             for f in dataset_dir.glob("*.jsonl"):
-                total_records += sum(1 for _ in open(f))
+                with open(f) as fh:
+                    total_records += sum(1 for _ in fh)
 
         # Read agent's self-reported summary
         summary_path = workspace / "summary.json"
