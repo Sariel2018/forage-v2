@@ -97,6 +97,21 @@ class BaseAgent:
             }
         return None
 
+    def _save_cli_output(self, result) -> None:
+        """Save raw claude CLI stdout/stderr to workspace for debugging."""
+        agent_type = type(self).__name__.lower().replace("agent", "")
+        log_dir = self.workspace / "cli_logs"
+        log_dir.mkdir(exist_ok=True)
+        # round_count already reflects current round (incremented in finally after this)
+        round_num = self.round_count + 1
+        prefix = f"r{round_num:02d}_{agent_type}"
+        if result.stdout:
+            (log_dir / f"{prefix}_stdout.json").write_text(result.stdout[-50000:])
+        if result.stderr:
+            (log_dir / f"{prefix}_stderr.txt").write_text(result.stderr[-5000:])
+        # Save exit code
+        (log_dir / f"{prefix}_exit.txt").write_text(str(result.returncode))
+
     def _build_command(self, user_message: str) -> list[str]:
         """Build the claude CLI command with session persistence flags.
 
@@ -145,6 +160,9 @@ class BaseAgent:
                 timeout=1200,  # 20 min max per agent call
                 cwd=str(self.workspace),
             )
+
+            # Save raw CLI output for debugging (always, regardless of exit code)
+            self._save_cli_output(result)
 
             if result.returncode != 0:
                 # Still try to parse stdout — agent may have completed work
