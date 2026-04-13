@@ -294,8 +294,12 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             if (workspace / "collect.py").is_file():
                 print(f"         WARNING: Planner response unusable ({str(reason)[:100]}), but collect.py exists — proceeding")
                 strategy = planner._salvage_from_workspace() or {"strategy_name": "salvaged", "collect_script_path": "collect.py"}
+            elif any((workspace / "dataset").rglob("*")):
+                # Math tasks: Planner may write directly to dataset/ without collect.py
+                print(f"         WARNING: No collect.py but dataset/ has content — skipping Executor, running eval.py only")
+                strategy = {"strategy_name": "direct_write", "collect_script_path": None, "_skip_executor": True}
             else:
-                print(f"         WARNING: Planner failed and no collect.py on disk — skipping round")
+                print(f"         WARNING: Planner failed, no collect.py, no dataset — skipping round")
                 continue
         else:
             strategy = plan_result
