@@ -90,10 +90,11 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
     evaluator = EvaluatorAgent(workspace=str(workspace), knowledge_dir=knowledge_dir)
     planner = PlannerAgent(workspace=str(workspace), knowledge_dir=knowledge_dir)
 
-    # Apply max_turns from task spec (overrides BaseAgent default)
-    max_turns = spec.budget.max_turns_per_agent
-    evaluator.max_turns = max_turns
-    planner.max_turns = max_turns
+    # Apply budget params from task spec
+    evaluator.max_turns = spec.budget.max_turns_per_agent
+    planner.max_turns = spec.budget.max_turns_per_agent
+    evaluator.effort = spec.budget.effort
+    planner.effort = spec.budget.effort
 
     # v2: stage knowledge files to workspace
     if knowledge_dir:
@@ -112,7 +113,7 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
         "max_rounds": spec.budget.max_rounds,
         "max_turns_evaluator": evaluator.max_turns,
         "max_turns_planner": planner.max_turns,
-        "effort": "medium",
+        "effort": spec.budget.effort,
         "agent_timeout_seconds": 1200,
         "max_requests": spec.budget.max_requests,
         "max_runtime_minutes": spec.budget.max_runtime_minutes,
@@ -124,7 +125,7 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
     print(f"# Forage v2: {spec.name}")
     print(f"# Topic: {spec.topic}")
     print(f"# Coverage target: {spec.coverage.target:.0%} ({spec.coverage.mode})")
-    print(f"# Budget: {spec.budget.max_rounds} rounds | max_turns: {evaluator.max_turns} | effort: medium | Mode: {mode}")
+    print(f"# Budget: {spec.budget.max_rounds} rounds | max_turns: {evaluator.max_turns} | effort: {spec.budget.effort} | Mode: {mode}")
     print(f"{'#'*60}")
 
     for round_id in range(1, spec.budget.max_rounds + 1):

@@ -65,6 +65,7 @@ budget:
   max_requests: 1000
   max_runtime_minutes: 180
   max_turns_per_agent: 50
+  effort: "high"
 
 risk:
   respect_robots_txt: true

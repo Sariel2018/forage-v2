@@ -36,6 +36,7 @@ class BaseAgent:
         self.usage = {}  # full token usage from claude CLI
         self.session_id = str(uuid.uuid4())
         self.round_count = 0
+        self.effort = "medium"  # default, overridden by spec
 
     @property
     def system_prompt(self) -> str:
@@ -147,7 +148,7 @@ class BaseAgent:
             "--max-turns", str(self.max_turns),
             "--dangerously-skip-permissions",
             "--disable-slash-commands",
-            "--effort", "medium",
+            "--effort", self.effort,
         ]
 
         if self.round_count == 0:

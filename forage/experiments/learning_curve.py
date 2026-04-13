@@ -34,6 +34,22 @@ def run_learning_curve(
     exp_dir = Path(output_dir) / spec.name / group / f"repeat_{repeat_id:02d}"
     exp_dir.mkdir(parents=True, exist_ok=True)
 
+    # Save task spec to experiment directory for reference
+    import yaml
+    spec_record = {
+        "task": {"name": spec.name, "description": spec.description, "task_type": spec.task_type},
+        "budget": {
+            "max_rounds": spec.budget.max_rounds,
+            "max_turns_per_agent": spec.budget.max_turns_per_agent,
+            "effort": spec.budget.effort,
+            "max_requests": spec.budget.max_requests,
+            "max_runtime_minutes": spec.budget.max_runtime_minutes,
+        },
+        "coverage": {"target": spec.coverage.target, "mode": spec.coverage.mode},
+    }
+    with open(exp_dir / "task_spec.yaml", "w") as f:
+        yaml.dump(spec_record, f, default_flow_style=False, allow_unicode=True)
+
     # For M+: use accumulating knowledge (create empty if first run)
     if group == "M+":
         work_knowledge = exp_dir / "knowledge"

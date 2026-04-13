@@ -27,6 +27,7 @@ class BudgetSpec:
     max_runtime_minutes: int
     max_requests: int
     max_turns_per_agent: int = 15
+    effort: str = "medium"
 
 
 @dataclass
