@@ -72,11 +72,14 @@ def run_learning_curve(
     else:
         results = []
 
-    # Auto-detect starting run number from existing directories
-    existing_runs = sorted(exp_dir.glob("run_*"))
-    start_run = len(existing_runs) + 1
+    # Auto-detect starting run number from completed results (not just directories)
+    start_run = len(results) + 1
 
-    for run_id in range(start_run, start_run + num_runs):
+    if start_run > num_runs:
+        print(f"  Already completed {start_run - 1} runs (target: {num_runs}). Nothing to do.")
+        return results
+
+    for run_id in range(start_run, num_runs + 1):
         run_dir = exp_dir / f"run_{run_id:03d}"
         print(f"\n{'#'*60}")
         print(f"# Learning Curve: {spec.name} | {group} | Run {run_id}/{num_runs}")
