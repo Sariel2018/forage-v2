@@ -106,7 +106,7 @@ class BaseAgent:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=1200,  # 20 min max per agent call
+                timeout=1800,  # 30 min max per agent call
                 cwd=str(self.workspace),
             )
 
@@ -127,7 +127,7 @@ class BaseAgent:
             return self._parse_response(output)
 
         except subprocess.TimeoutExpired:
-            return {"error": "claude CLI timed out after 1200s"}
+            return {"error": "claude CLI timed out after 1800s"}
         except Exception as e:
             return {"error": f"claude CLI error: {e}"}
         finally:
