@@ -90,6 +90,11 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
     evaluator = EvaluatorAgent(workspace=str(workspace), knowledge_dir=knowledge_dir)
     planner = PlannerAgent(workspace=str(workspace), knowledge_dir=knowledge_dir)
 
+    # Apply max_turns from task spec (overrides BaseAgent default)
+    max_turns = spec.budget.max_turns_per_agent
+    evaluator.max_turns = max_turns
+    planner.max_turns = max_turns
+
     # v2: stage knowledge files to workspace
     if knowledge_dir:
         _stage_knowledge(knowledge_dir, workspace, spec)

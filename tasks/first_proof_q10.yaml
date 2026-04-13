@@ -1,0 +1,72 @@
+# Forage Task Spec: First Proof Q10 (Kolda)
+# Research-level math: Preconditioned CG for RKHS-constrained CP tensor decomposition
+# Source: https://arxiv.org/abs/2602.05192 (Question 10, posed by Tammy Kolda)
+#
+# This is a constructive problem: design a method, not prove existence.
+# The answer is verifiable: implement it, benchmark convergence, check complexity.
+
+task:
+  name: "first_proof_q10"
+  description: |
+    Solve Question 10 from the First Proof benchmark (Tammy Kolda).
+
+    Given a d-way tensor T with missing entries, we compute a CP decomposition of rank r
+    where some modes are infinite-dimensional and constrained to a Reproducing Kernel
+    Hilbert Space (RKHS). The mode-k subproblem requires solving:
+
+      [(Z ⊗ K)^T S S^T (Z ⊗ K) + λ(I_r ⊗ K)] vec(W) = (I_r ⊗ K) vec(B)
+
+    This is a system of size nr × nr. Direct solve costs O(n³r³).
+
+    Task: Design an efficient preconditioned conjugate gradient solver.
+    Specifically: (1) choose a preconditioner, (2) explain how matrix-vector products
+    are computed without forming the full matrix, (3) prove correctness,
+    (4) provide complexity analysis showing improvement over O(n³r³),
+    (5) implement and benchmark on synthetic data.
+
+    Assume n, r ≪ q ≪ N where N = ∏ nᵢ. Avoid any computation of order N.
+  task_type: "math_research"
+
+target:
+  topic: "Preconditioned CG for RKHS-constrained CP tensor decomposition"
+  time_range:
+    start: ""
+    end: ""
+  doc_type: "mathematical solution"
+  language: "en"
+
+coverage:
+  target: 0.90
+  mode: "soft"
+  dimensions:
+    - method_design       # preconditioner choice + justification
+    - matvec_efficiency   # matrix-vector product without forming full matrix
+    - correctness_proof   # mathematical proof that the method is correct
+    - complexity_analysis # complexity bounds better than O(n³r³)
+    - implementation      # working code + benchmark results
+
+quality:
+  min_text_length: 0
+  required_fields:
+    - preconditioner_design
+    - matvec_algorithm
+    - complexity_bound
+    - implementation_code
+    - benchmark_results
+
+budget:
+  max_rounds: 8
+  max_requests: 1000
+  max_runtime_minutes: 180
+  max_turns_per_agent: 50
+
+risk:
+  respect_robots_txt: true
+  max_requests_per_minute: 30
+
+sources:
+  seed_sources: []
+  preferred_sources:
+    - "arxiv.org"
+    - "mathscinet.ams.org"
+    - "scholar.google.com"

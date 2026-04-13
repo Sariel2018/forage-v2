@@ -51,6 +51,8 @@ def main():
                               help="Experiment group (default: M+)")
     learn_parser.add_argument("--repeat", type=int, default=1,
                               help="Repeat ID for this trajectory (default: 1)")
+    learn_parser.add_argument("--max-turns", type=int, default=None,
+                              help="Override max_turns_per_agent from task spec")
 
     # --- forage report ---
     report_parser = subparsers.add_parser("report", help="Generate HTML report from trajectory")
@@ -77,6 +79,8 @@ def main():
 
     elif args.command == "learn":
         spec = TaskSpec.from_yaml(args.spec)
+        if args.max_turns is not None:
+            spec.budget.max_turns_per_agent = args.max_turns
         from .experiments.learning_curve import run_learning_curve
         run_learning_curve(
             spec=spec,

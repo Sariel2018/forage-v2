@@ -26,6 +26,7 @@ class BudgetSpec:
     max_rounds: int
     max_runtime_minutes: int
     max_requests: int
+    max_turns_per_agent: int = 15
 
 
 @dataclass
