@@ -187,21 +187,35 @@ class BaseAgent:
             self._save_cli_output(result)
 
             if result.returncode != 0:
-                # Still try to parse stdout — agent may have completed work
-                # before CLI errored (e.g., output too large)
+                # Parse stdout even on error — may contain useful data
+                cli_output = None
                 if result.stdout and result.stdout.strip():
                     try:
-                        output = self._parse_claude_output(result.stdout)
-                        if isinstance(output, dict):
-                            self.cost_usd = output.get("total_cost_usd", 0.0)
-                            self.usage = output.get("usage", {})
-                        parsed = self._parse_response(output)
-                        if parsed.get("text") != str(output):
-                            # Got a valid structured response despite exit code
-                            parsed["_cli_exit_code"] = result.returncode
-                            return parsed
-                    except Exception:
+                        cli_output = json.loads(result.stdout)
+                        # Always extract cost/usage from CLI output
+                        self.cost_usd = cli_output.get("total_cost_usd", 0.0)
+                        self.usage = cli_output.get("usage", {})
+                    except (json.JSONDecodeError, Exception):
                         pass
+
+                # Check if this is max_turns exhaustion (not a real error)
+                if cli_output and cli_output.get("subtype") == "error_max_turns":
+                    # Agent ran out of turns but session is healthy.
+                    # Work may be on disk. Don't treat as error — salvage will handle.
+                    print(f"  (max_turns exhausted after {cli_output.get('num_turns', '?')} turns, salvaging from workspace)")
+                    salvaged = self._salvage_from_workspace()
+                    if salvaged:
+                        salvaged["_max_turns_exhausted"] = True
+                        return salvaged
+                    # If nothing on disk either, fall through to error
+
+                # Try to parse agent's response from stdout
+                if cli_output:
+                    parsed = self._parse_response(cli_output)
+                    if parsed.get("text") != str(cli_output):
+                        parsed["_cli_exit_code"] = result.returncode
+                        return parsed
+
                 return {
                     "error": f"claude CLI failed (exit {result.returncode})",
                     "stderr": result.stderr[-1000:] if result.stderr else "",
