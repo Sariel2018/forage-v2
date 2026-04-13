@@ -246,6 +246,12 @@ class BaseAgent:
             # stream-json: partial stdout may be available even on timeout
             if e.stdout:
                 self._save_cli_output_raw(e.stdout, "timeout")
+            # Check if agent completed work before timeout (don't airdrop — session may survive)
+            salvaged = self._salvage_from_workspace()
+            if salvaged:
+                print(f"  (timeout after 1200s, but work found on disk — salvaging)")
+                salvaged["_timeout"] = True
+                return salvaged
             return {"error": "claude CLI timed out after 1200s"}
         except Exception as e:
             return {"error": f"claude CLI error: {e}"}
