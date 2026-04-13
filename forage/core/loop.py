@@ -379,8 +379,8 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
         trajectory.add_round({
             "round_id": round_id,
             "duration_seconds": duration,
-            "denominator": eval_result.get("denominator", "unknown"),
-            "denominator_source": eval_result.get("denominator_source", "?"),
+            "denominator": eval_result.get("denominator") or metrics.get("denominator", "unknown"),
+            "denominator_source": eval_result.get("denominator_source") or metrics.get("denominator_source", "?"),
             "denominator_confidence": eval_result.get("denominator_confidence", "?"),
             "discovery": eval_result.get("discovery", ""),
             "evaluator_decision": "stop" if should_stop else "continue",
@@ -462,6 +462,16 @@ class _LogTee:
 
     def close(self):
         self.log.close()
+
+    def isatty(self):
+        return False
+
+    @property
+    def encoding(self):
+        return self.terminal.encoding
+
+    def fileno(self):
+        return self.terminal.fileno()
 
 
 # --- Context builders ---
@@ -632,18 +642,19 @@ def _merge_usage(target: dict, source: dict):
 
 
 def _count_total_records(workspace: Path) -> int:
-    """Count total records, searching recursively for both .jsonl and .json files."""
+    """Count total records in dataset/ directory only."""
+    dataset_dir = workspace / "dataset"
+    if not dataset_dir.is_dir():
+        return 0
     total = 0
-    for f in workspace.rglob("*.jsonl"):
+    for f in dataset_dir.rglob("*.jsonl"):
         try:
             with open(f) as fh:
                 total += sum(1 for _ in fh)
         except (OSError, UnicodeDecodeError):
             pass
     if total == 0:
-        for f in workspace.rglob("*.json"):
-            if f.name in ("metrics.json", "summary.json"):
-                continue
+        for f in dataset_dir.rglob("*.json"):
             total += 1
     return total
 

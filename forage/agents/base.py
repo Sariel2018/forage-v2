@@ -201,16 +201,13 @@ class BaseAgent:
             self._save_cli_output(result)
 
             if result.returncode != 0:
-                # Parse stdout even on error — may contain useful data
+                # Parse stdout even on error — stream-json has multiple lines
                 cli_output = None
                 if result.stdout and result.stdout.strip():
-                    try:
-                        cli_output = json.loads(result.stdout)
-                        # Always extract cost/usage from CLI output
+                    cli_output = self._parse_claude_output(result.stdout)
+                    if isinstance(cli_output, dict):
                         self.cost_usd = cli_output.get("total_cost_usd", 0.0)
                         self.usage = cli_output.get("usage", {})
-                    except (json.JSONDecodeError, Exception):
-                        pass
 
                 # Check if this is max_turns exhaustion (not a real error)
                 if cli_output and cli_output.get("subtype") == "error_max_turns":
@@ -265,6 +262,7 @@ class BaseAgent:
         Returns dict with optional "_airdropped": True if recovery was used.
         """
         result = self.run(user_message)
+        failed_cost = self.cost_usd  # save cost from first attempt
 
         # Check if the result indicates a failure
         if "error" not in result:
@@ -304,6 +302,7 @@ class BaseAgent:
 
         # round_count is 0, so run() will write CLAUDE.md automatically
         recovery_result = self.run(recovery_message)
+        self.cost_usd += failed_cost  # add cost from failed first attempt
         recovery_result["_airdropped"] = True
 
         # If recovery also failed, reset for next round (fresh session)
