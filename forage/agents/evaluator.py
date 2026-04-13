@@ -97,6 +97,13 @@ Respond with a JSON object:
 }
 
 Write eval.py to the workspace before responding.
+
+Also write eval_contract.md — a brief document (visible to the Planner) describing:
+- What files/format you expect in dataset/ (e.g., JSONL with specific fields, Python scripts, markdown)
+- What your eval.py checks for (high-level, without revealing implementation)
+- How coverage is measured
+
+The Planner will read eval_contract.md to know what to produce. Update it if your expectations change.
 """
 
     @property

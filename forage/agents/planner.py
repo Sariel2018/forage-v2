@@ -56,6 +56,11 @@ without being constrained by how the Evaluator defines completeness.
 - Do NOT evaluate coverage (that's the Evaluator's job)
 - Do NOT repeat a strategy that already failed without a meaningful change
 
+## Evaluator contract:
+Before writing collect.py, READ eval_contract.md if it exists — it describes what format
+and files the Evaluator expects in dataset/. Follow this contract so your output matches
+what eval.py will check for.
+
 ## Strategy evolution:
 - Round 1: start with the most obvious/direct approach
 - Later rounds: analyze gaps, try alternative sources, adjust parsing, target missing segments
