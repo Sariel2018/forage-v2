@@ -217,7 +217,11 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             print(f"         Decision: {decision} — {eval_result.get('decision_reason', '?')}")
 
             if decision == "stop":
-                should_stop = True
+                coverage_now = _safe_coverage(metrics) if metrics.get("coverage_estimate") else 0.0
+                if spec.coverage.mode == "hard" and coverage_now < spec.coverage.target:
+                    print(f"         OVERRIDE: Evaluator wants to stop at {coverage_now:.1%} but hard target is {spec.coverage.target:.0%} — continuing")
+                else:
+                    should_stop = True
 
             # Read latest metrics from workspace (Evaluator may have run eval.py internally)
             metrics_path = workspace / "metrics.json"
