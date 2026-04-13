@@ -507,8 +507,16 @@ def _build_evaluator_context(
         # Previous metrics
         if history:
             last = history[-1]
-            parts.append(f"\nPrevious round coverage: {_safe_coverage(last.metrics):.1%}")
+            last_coverage = _safe_coverage(last.metrics)
+            parts.append(f"\nPrevious round coverage: {last_coverage:.1%}")
             parts.append(f"Total records so far: {last.records_total}")
+
+            # Signal: if target reached early, push Evaluator to deepen verification
+            if last_coverage >= spec.coverage.target and round_id <= 3:
+                parts.append(f"\n⚠ Coverage reached target in Round {round_id - 1}. Before stopping, ask yourself:")
+                parts.append(f"  - Is your eval.py testing at sufficient scale and rigor?")
+                parts.append(f"  - Would the results hold with larger inputs, harder edge cases, or adversarial tests?")
+                parts.append(f"  - You have {spec.budget.max_rounds - round_id + 1} rounds remaining — use them to DEEPEN verification if needed.")
             if last.metrics.get("gaps"):
                 parts.append(f"Gaps:\n{json.dumps(last.metrics['gaps'], indent=2)}")
 
