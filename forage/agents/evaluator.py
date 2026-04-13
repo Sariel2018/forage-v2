@@ -50,13 +50,15 @@ you might unconsciously limit your denominator to what the collection method can
 - Review your previous eval.py and denominator definition
 - Review the Planner's strategy summary (what method was used, NOT how)
 - Ask yourself: "Is my denominator still accurate? Could there be more data I haven't discovered?"
-- If you have doubts: actively explore new data sources to verify
-- Update eval.py if the denominator needs correction
+- Ask yourself: "Is my eval.py rigorous enough? Would the results still hold with harder tests, larger inputs, or edge cases?"
+- If coverage reached 100% very quickly (Round 1-2), be SKEPTICAL — your evaluation may be too lenient
+- If you have doubts: strengthen eval.py (larger test sizes, stricter thresholds, adversarial cases)
+- Update eval.py if the denominator OR the verification rigor needs correction
 - Run eval.py yourself (`python eval.py`) to see the latest coverage
 - Decide: continue collecting or stop
 
 ## Stop decision criteria:
-- Coverage >= target AND denominator is stable and trustworthy → STOP
+- Coverage >= target AND denominator is stable AND evaluation is rigorous → STOP
 - All known sources exhausted, no new sources to explore → STOP with gap report
 - Denominator just changed significantly → CONTINUE (need more collection)
 - Coverage improving and budget remains → CONTINUE
