@@ -25,6 +25,12 @@ task:
     (5) implement and benchmark on synthetic data.
 
     Assume n, r ≪ q ≪ N where N = ∏ nᵢ. Avoid any computation of order N.
+
+    IMPORTANT for Evaluator: eval.py must verify CORRECTNESS, not just presence.
+    - Run the solver implementation on synthetic data and verify it converges
+    - Check that convergence is faster than direct solve O(n³r³)
+    - Validate benchmark results are numerically reasonable
+    - A proof that only contains keywords but is logically wrong should score 0
   task_type: "math_research"
 
 target:
@@ -36,7 +42,7 @@ target:
   language: "en"
 
 coverage:
-  target: 0.90
+  target: 1.00
   mode: "soft"
   dimensions:
     - method_design       # preconditioner choice + justification
