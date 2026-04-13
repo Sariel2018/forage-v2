@@ -62,6 +62,41 @@ class BaseAgent:
             return ""
         return index_path.read_text()
 
+    def _salvage_from_workspace(self) -> dict | None:
+        """Check if agent completed work on disk despite CLI failure.
+
+        Returns a fallback result dict if work is found, None otherwise.
+        Subclasses can override to check for their specific output files.
+        """
+        import json as _json
+        # Evaluator: eval.py + metrics.json
+        eval_py = self.workspace / "eval.py"
+        metrics_json = self.workspace / "metrics.json"
+        if eval_py.is_file() and metrics_json.is_file():
+            try:
+                metrics = _json.loads(metrics_json.read_text())
+                return {
+                    "eval_script_path": "eval.py",
+                    "denominator": metrics.get("denominator", "unknown"),
+                    "denominator_source": metrics.get("denominator_source", "salvaged from metrics.json"),
+                    "denominator_confidence": "medium",
+                    "decision": "continue",
+                    "decision_reason": "Salvaged from workspace (CLI failed but work completed)",
+                    "_salvaged": True,
+                }
+            except (ValueError, KeyError):
+                pass
+        # Planner: collect.py
+        collect_py = self.workspace / "collect.py"
+        if collect_py.is_file():
+            return {
+                "strategy_name": "salvaged_strategy",
+                "strategy_description": "Salvaged from workspace (CLI failed but collect.py written)",
+                "collect_script_path": "collect.py",
+                "_salvaged": True,
+            }
+        return None
+
     def _build_command(self, user_message: str) -> list[str]:
         """Build the claude CLI command with session persistence flags.
 
@@ -112,6 +147,21 @@ class BaseAgent:
             )
 
             if result.returncode != 0:
+                # Still try to parse stdout — agent may have completed work
+                # before CLI errored (e.g., output too large)
+                if result.stdout and result.stdout.strip():
+                    try:
+                        output = self._parse_claude_output(result.stdout)
+                        if isinstance(output, dict):
+                            self.cost_usd = output.get("total_cost_usd", 0.0)
+                            self.usage = output.get("usage", {})
+                        parsed = self._parse_response(output)
+                        if parsed.get("text") != str(output):
+                            # Got a valid structured response despite exit code
+                            parsed["_cli_exit_code"] = result.returncode
+                            return parsed
+                    except Exception:
+                        pass
                 return {
                     "error": f"claude CLI failed (exit {result.returncode})",
                     "stderr": result.stderr[-1000:] if result.stderr else "",
@@ -148,6 +198,14 @@ class BaseAgent:
         # Check if the result indicates a failure
         if "error" not in result:
             return result
+
+        # Before airdroping, check if agent already completed work on disk
+        # (e.g., CLI crashed on output but eval.py/collect.py were written)
+        workspace_result = self._salvage_from_workspace()
+        if workspace_result:
+            print(f"  Warning: Agent CLI failed ({result['error']}) but work found on disk — salvaging")
+            workspace_result["_cli_exit_code"] = result.get("error", "")
+            return workspace_result
 
         print(f"  Warning: Agent session failed: {result['error']}")
         if result.get("stderr"):
