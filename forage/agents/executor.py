@@ -74,7 +74,8 @@ def execute_collection(
         if records == 0:
             for f in workspace.rglob("*.jsonl"):
                 try:
-                    records += sum(1 for _ in open(f))
+                    with open(f) as fh:
+                        records += sum(1 for _ in fh)
                 except (OSError, UnicodeDecodeError):
                     pass
         # Also count individual .json files if no JSONL found

@@ -68,12 +68,20 @@ def run(
     _log_tee = _LogTee(log_path)
     sys.stdout = _log_tee
 
-    print(f"  Isolated workspace: {workspace}")
+    try:
+        return _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path)
+    finally:
+        sys.stdout = _log_tee.terminal
+        _log_tee.close()
+
+
+def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
+    """Inner run body — separated so stdout tee is always restored via try/finally."""
+    from datetime import datetime, timezone
+
     history: list[RoundResult] = []
     total_cost_usd = 0.0
     metrics = {"coverage_estimate": 0.0, "total_collected": 0, "denominator": 0}
-
-    # Track Evaluator's denominator history and Planner's strategy summaries
     eval_result_history: list[dict] = []
     planner_summaries: list[dict] = []
 
@@ -86,7 +94,6 @@ def run(
         _stage_knowledge(knowledge_dir, workspace, spec)
 
     # v2: trajectory tracking
-    from datetime import datetime, timezone
     trajectory = Trajectory(spec.name, {
         "name": spec.name,
         "description": spec.description,
@@ -94,6 +101,8 @@ def run(
         "coverage_target": spec.coverage.target,
     })
     trajectory.data["started_at"] = datetime.now(timezone.utc).isoformat()
+
+    print(f"  Isolated workspace: {workspace}")
 
     print(f"\n{'#'*60}")
     print(f"# Forage v2: {spec.name}")
@@ -389,10 +398,6 @@ def run(
     from ..report import generate_report
     generate_report(results_dir / "trajectory.json")
     print(f"  Workspace copied to: {artifacts_dir}")
-
-    # v2: restore stdout and close log
-    sys.stdout = _log_tee.terminal
-    _log_tee.close()
     print(f"  Log saved to: {log_path}")
 
     return history
@@ -594,7 +599,8 @@ def _count_total_records(workspace: Path) -> int:
     total = 0
     for f in workspace.rglob("*.jsonl"):
         try:
-            total += sum(1 for _ in open(f))
+            with open(f) as fh:
+                total += sum(1 for _ in fh)
         except (OSError, UnicodeDecodeError):
             pass
     if total == 0:

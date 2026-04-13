@@ -112,7 +112,8 @@ class BaseAgent:
         agent_type = type(self).__name__.lower().replace("agent", "")
         log_dir = self.workspace / "cli_logs"
         log_dir.mkdir(exist_ok=True)
-        # round_count already reflects current round (incremented in finally after this)
+        # round_count has NOT been incremented yet (that happens in finally block)
+        # so +1 to get the current round number
         round_num = self.round_count + 1
         prefix = f"r{round_num:02d}_{agent_type}"
         (log_dir / f"{prefix}_stdout.json").write_text(result.stdout[-50000:] if result.stdout else "")
