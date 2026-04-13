@@ -22,7 +22,7 @@ from .spec import TaskSpec
 from .trajectory import Trajectory
 from ..agents.evaluator import EvaluatorAgent
 from ..agents.planner import PlannerAgent
-from ..agents.executor import execute_collection, run_eval_script
+from ..agents.executor import ExecutionResult, execute_collection, run_eval_script
 
 
 @dataclass
@@ -318,17 +318,24 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             should_stop = True
 
         # --- Step 3: Executor ---
-        print("\n  [3/3] Executor: running collection script...")
-        collect_script = strategy.get("collect_script_path", "collect.py")
-        exec_result = execute_collection(
-            workspace=workspace,
-            script_path=collect_script,
-            timeout=spec.budget.max_runtime_minutes * 60 // spec.budget.max_rounds,
-        )
-        print(f"         Collected: {exec_result.records_collected} records ({exec_result.duration_seconds:.0f}s)")
+        if strategy.get("_skip_executor"):
+            print("\n  [3/3] Executor: SKIPPED (data written directly to dataset/)")
+            exec_result = ExecutionResult(
+                records_collected=0, requests_used=0, duration_seconds=0,
+                stdout="", stderr="", exit_code=0,
+            )
+        else:
+            print("\n  [3/3] Executor: running collection script...")
+            collect_script = strategy.get("collect_script_path", "collect.py")
+            exec_result = execute_collection(
+                workspace=workspace,
+                script_path=collect_script,
+                timeout=spec.budget.max_runtime_minutes * 60 // spec.budget.max_rounds,
+            )
+            print(f"         Collected: {exec_result.records_collected} records ({exec_result.duration_seconds:.0f}s)")
 
-        if exec_result.error:
-            print(f"         Error: {exec_result.error}")
+            if exec_result.error:
+                print(f"         Error: {exec_result.error}")
 
         # --- Step 4: Run eval.py (deterministic, for next round's Evaluator) ---
         eval_script = "eval.py"

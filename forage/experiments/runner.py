@@ -252,6 +252,8 @@ def _write_spec_to_dir(spec: TaskSpec, run_dir: Path):
             "max_rounds": spec.budget.max_rounds,
             "max_runtime_minutes": spec.budget.max_runtime_minutes,
             "max_requests": spec.budget.max_requests,
+            "max_turns_per_agent": spec.budget.max_turns_per_agent,
+            "effort": spec.budget.effort,
         },
         "risk": {
             "respect_robots_txt": spec.risk.respect_robots_txt,
