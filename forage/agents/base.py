@@ -105,10 +105,8 @@ class BaseAgent:
         # round_count already reflects current round (incremented in finally after this)
         round_num = self.round_count + 1
         prefix = f"r{round_num:02d}_{agent_type}"
-        if result.stdout:
-            (log_dir / f"{prefix}_stdout.json").write_text(result.stdout[-50000:])
-        if result.stderr:
-            (log_dir / f"{prefix}_stderr.txt").write_text(result.stderr[-5000:])
+        (log_dir / f"{prefix}_stdout.json").write_text(result.stdout[-50000:] if result.stdout else "")
+        (log_dir / f"{prefix}_stderr.txt").write_text(result.stderr[-5000:] if result.stderr else "")
         # Save exit code
         (log_dir / f"{prefix}_exit.txt").write_text(str(result.returncode))
 
