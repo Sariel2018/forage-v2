@@ -101,6 +101,14 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
         "coverage_target": spec.coverage.target,
     })
     trajectory.data["started_at"] = datetime.now(timezone.utc).isoformat()
+    trajectory.data["run_config"] = {
+        "mode": mode,
+        "max_rounds": spec.budget.max_rounds,
+        "max_turns_per_agent": evaluator.max_turns,
+        "agent_timeout_seconds": 1200,
+        "max_requests": spec.budget.max_requests,
+        "max_runtime_minutes": spec.budget.max_runtime_minutes,
+    }
 
     print(f"  Isolated workspace: {workspace}")
 
@@ -108,7 +116,7 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
     print(f"# Forage v2: {spec.name}")
     print(f"# Topic: {spec.topic}")
     print(f"# Coverage target: {spec.coverage.target:.0%} ({spec.coverage.mode})")
-    print(f"# Budget: {spec.budget.max_rounds} rounds | Mode: {mode}")
+    print(f"# Budget: {spec.budget.max_rounds} rounds | max_turns: {evaluator.max_turns} | Mode: {mode}")
     print(f"{'#'*60}")
 
     for round_id in range(1, spec.budget.max_rounds + 1):
