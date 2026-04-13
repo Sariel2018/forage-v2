@@ -118,7 +118,7 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path):
     print(f"# Forage v2: {spec.name}")
     print(f"# Topic: {spec.topic}")
     print(f"# Coverage target: {spec.coverage.target:.0%} ({spec.coverage.mode})")
-    print(f"# Budget: {spec.budget.max_rounds} rounds | max_turns: {evaluator.max_turns} | Mode: {mode}")
+    print(f"# Budget: {spec.budget.max_rounds} rounds | max_turns: {evaluator.max_turns} | effort: medium | Mode: {mode}")
     print(f"{'#'*60}")
 
     for round_id in range(1, spec.budget.max_rounds + 1):
