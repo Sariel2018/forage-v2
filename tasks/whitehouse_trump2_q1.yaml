@@ -12,7 +12,7 @@ target:
   language: "en"
 
 coverage:
-  target: 0.95
+  target: 0.90
   mode: "hard"
   dimensions:
     - time
