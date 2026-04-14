@@ -17,6 +17,8 @@ def generate_report(trajectory_path: Path, output_path: Path | None = None):
     round_ids = [r["round_id"] for r in rounds]
     coverages = [r.get("coverage", 0) for r in rounds]
     denominators = [r.get("denominator", 0) for r in rounds]
+    records_collected = [r.get("records_collected", 0) for r in rounds]
+    records_total = [r.get("records_total", 0) for r in rounds]
     costs = [r.get("round_cost_usd", 0) for r in rounds]
 
     final_state = data.get("final_state", {})
@@ -142,8 +144,15 @@ def generate_report(trajectory_path: Path, output_path: Path | None = None):
         marker: {{color: '#b8860b'}},
         line: {{color: '#b8860b', width: 2}},
         name: 'Denominator'
+    }}, {{
+        x: {json.dumps(round_ids)},
+        y: {json.dumps(records_total)},
+        mode: 'lines+markers',
+        marker: {{color: '#4a6741'}},
+        line: {{color: '#4a6741', width: 2, dash: 'dot'}},
+        name: 'Records Collected'
     }}], {{
-        yaxis: {{title: 'Denominator'}},
+        yaxis: {{title: 'Count'}},
         xaxis: {{title: 'Round', dtick: 1}},
         margin: {{t: 20}},
         paper_bgcolor: '#faf8f5',
