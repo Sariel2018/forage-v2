@@ -287,6 +287,15 @@ class BaseAgent:
             print(f"  STDERR: {result['stderr'][:500]}")
         print(f"  Airdropping replacement agent...")
 
+        # Preserve failed agent's cli_logs before reset (avoid overwrite)
+        log_dir = self.workspace / "cli_logs"
+        if log_dir.is_dir():
+            agent_type = type(self).__name__.lower().replace("agent", "")
+            round_num = self.round_count  # already incremented by finally
+            prefix = f"r{round_num:02d}_{agent_type}"
+            for f in log_dir.glob(f"{prefix}_*"):
+                f.rename(f.with_stem(f.stem + "_failed"))
+
         # New session (replacement agent)
         self.session_id = str(uuid.uuid4())
         old_round_count = self.round_count
