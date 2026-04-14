@@ -211,14 +211,14 @@ class BaseAgent:
 
                 # Check if this is max_turns exhaustion (not a real error)
                 if cli_output and cli_output.get("subtype") == "error_max_turns":
-                    # Agent ran out of turns but session is healthy.
-                    # Work may be on disk. Don't treat as error — salvage will handle.
+                    # Agent ran out of turns but session is healthy — NEVER airdrop.
                     print(f"  (max_turns exhausted after {cli_output.get('num_turns', '?')} turns, salvaging from workspace)")
                     salvaged = self._salvage_from_workspace()
                     if salvaged:
                         salvaged["_max_turns_exhausted"] = True
                         return salvaged
-                    # If nothing on disk either, fall through to error
+                    # No work on disk, but session is still healthy — skip round, don't airdrop
+                    return {"_max_turns_exhausted": True, "text": "Agent exhausted turns without producing output"}
 
                 # Try to parse agent's response from stdout
                 if cli_output:
