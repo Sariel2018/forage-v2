@@ -52,6 +52,14 @@ def generate_report(trajectory_path: Path, output_path: Path | None = None):
         except (ValueError, TypeError):
             numeric_denoms.append(0)
 
+    # Valid records = coverage × denominator (eval.py filtered count)
+    records_valid = []
+    for c, d in zip(coverages, numeric_denoms):
+        try:
+            records_valid.append(int(float(c) * d))
+        except (ValueError, TypeError):
+            records_valid.append(0)
+
     coverage_pcts = []
     for c in coverages:
         try:
@@ -151,6 +159,13 @@ def generate_report(trajectory_path: Path, output_path: Path | None = None):
         marker: {{color: '#4a6741'}},
         line: {{color: '#4a6741', width: 2}},
         name: 'Total Records (cumulative)'
+    }}, {{
+        x: {json.dumps(round_ids)},
+        y: {json.dumps(records_valid)},
+        mode: 'lines+markers',
+        marker: {{color: '#8B0000'}},
+        line: {{color: '#8B0000', width: 2, dash: 'dash'}},
+        name: 'Valid Records (filtered)'
     }}, {{
         x: {json.dumps(round_ids)},
         y: {json.dumps(records_collected)},
