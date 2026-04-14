@@ -42,7 +42,7 @@ budget:
   max_rounds: 8
   max_requests: 5000
   max_runtime_minutes: 240
-  max_turns_per_agent: 35
+  max_turns_per_agent: 50
   effort: "high"
 
 risk:
