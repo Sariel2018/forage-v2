@@ -243,9 +243,18 @@ class BaseAgent:
             return self._parse_response(output)
 
         except subprocess.TimeoutExpired as e:
-            # stream-json: partial stdout may be available even on timeout
+            # stream-json: partial stdout may contain cost data + tool call history
             if e.stdout:
                 self._save_cli_output_raw(e.stdout, "timeout")
+                # Try to extract cost from partial stream output
+                stdout_str = e.stdout.decode("utf-8", errors="replace") if isinstance(e.stdout, bytes) else str(e.stdout)
+                cli_output = self._parse_claude_output(stdout_str)
+                if isinstance(cli_output, dict):
+                    self.cost_usd = cli_output.get("total_cost_usd", 0.0)
+                    self.usage = cli_output.get("usage", {})
+            else:
+                self._save_cli_output_raw(b"", "timeout_no_output")
+                self.cost_usd = 0.0  # don't carry stale value
             # Timeout does NOT mean session is dead — NEVER airdrop.
             # Salvage work if available, otherwise skip round. Next round will --resume.
             salvaged = self._salvage_from_workspace()
