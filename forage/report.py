@@ -149,8 +149,14 @@ def generate_report(trajectory_path: Path, output_path: Path | None = None):
         y: {json.dumps(records_total)},
         mode: 'lines+markers',
         marker: {{color: '#4a6741'}},
-        line: {{color: '#4a6741', width: 2, dash: 'dot'}},
-        name: 'Records Collected'
+        line: {{color: '#4a6741', width: 2}},
+        name: 'Total Records (cumulative)'
+    }}, {{
+        x: {json.dumps(round_ids)},
+        y: {json.dumps(records_collected)},
+        mode: 'markers',
+        marker: {{color: '#6b8f63', size: 8, symbol: 'diamond'}},
+        name: 'Records This Round'
     }}], {{
         yaxis: {{title: 'Count'}},
         xaxis: {{title: 'Round', dtick: 1}},
