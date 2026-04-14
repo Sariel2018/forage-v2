@@ -1,0 +1,57 @@
+# Forage Task Spec: Oil & Gold Price vs Geopolitical Events Analysis
+# Multi-source data fusion + analysis + report generation
+
+task:
+  name: "oil_gold_geopolitics_2026"
+  description: |
+    Collect daily oil (WTI crude) and gold prices since January 2026, and identify
+    all major geopolitical events (Iran tensions, Trump administration policies,
+    OPEC decisions, sanctions, military actions) that coincided with significant
+    price movements (>3% daily change).
+
+    Produce a professional analysis report that:
+    - Lists all significant price movement dates with magnitude and direction
+    - Links each movement to concurrent geopolitical events with evidence
+    - Includes data visualizations (price charts with event annotations)
+    - Assesses correlation strength (not just coincidence)
+    - Cites all data sources
+
+    The report should be suitable for a senior financial analyst audience.
+    Statistical rigor expected: distinguish correlation from noise,
+    acknowledge uncertainty, provide confidence assessments.
+  task_type: "multi_source_analysis"
+
+target:
+  topic: "Oil and gold price movements correlated with geopolitical events in 2026"
+  time_range:
+    start: "2026-01-01"
+    end: "2026-04-14"
+  doc_type: "analysis report"
+  language: "en"
+
+coverage:
+  target: 0.90
+  mode: "soft"
+  dimensions: []
+
+quality:
+  min_text_length: 0
+  required_fields: []
+
+budget:
+  max_rounds: 8
+  max_requests: 5000
+  max_runtime_minutes: 240
+  max_turns_per_agent: 35
+  effort: "high"
+
+risk:
+  respect_robots_txt: true
+  max_requests_per_minute: 30
+
+sources:
+  seed_sources: []
+  preferred_sources:
+    - "finance.yahoo.com"
+    - "reuters.com"
+    - "bloomberg.com"

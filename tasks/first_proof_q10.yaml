@@ -1,9 +1,5 @@
 # Forage Task Spec: First Proof Q10 (Kolda)
-# Research-level math: Preconditioned CG for RKHS-constrained CP tensor decomposition
 # Source: https://arxiv.org/abs/2602.05192 (Question 10, posed by Tammy Kolda)
-#
-# This is a constructive problem: design a method, not prove existence.
-# The answer is verifiable: implement it, benchmark convergence, check complexity.
 
 task:
   name: "first_proof_q10"
@@ -18,19 +14,13 @@ task:
 
     This is a system of size nr × nr. Direct solve costs O(n³r³).
 
-    Task: Design an efficient preconditioned conjugate gradient solver.
-    Specifically: (1) choose a preconditioner, (2) explain how matrix-vector products
-    are computed without forming the full matrix, (3) prove correctness,
-    (4) provide complexity analysis showing improvement over O(n³r³),
-    (5) implement and benchmark on synthetic data.
+    Explain how an iterative preconditioned conjugate gradient linear solver can be used
+    to solve this problem more efficiently. Explain the method and choice of preconditioner.
+    Explain in detail how the matrix-vector products are computed and why this works.
+    Provide complexity analysis. Assume n, r < q ≪ N. Avoid any computation of order N.
 
-    Assume n, r ≪ q ≪ N where N = ∏ nᵢ. Avoid any computation of order N.
-
-    IMPORTANT for Evaluator: eval.py must verify CORRECTNESS, not just presence.
-    - Run the solver implementation on synthetic data and verify it converges
-    - Check that convergence is faster than direct solve O(n³r³)
-    - Validate benchmark results are numerically reasonable
-    - A proof that only contains keywords but is logically wrong should score 0
+    The solution must be rigorous: formal proofs, working implementation verified at
+    multiple scales, and complexity claims backed by empirical benchmarks.
   task_type: "math_research"
 
 target:
