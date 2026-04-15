@@ -544,10 +544,10 @@ def _build_evaluator_context(
 
         # Self-audit checklist — every round, not just when coverage is met
         parts.append("\n🔍 Self-audit checklist (ask yourself EVERY round):")
-        parts.append("  - Is my denominator still accurate? Could there be sources I haven't discovered?")
+        parts.append("  - Is my denominator still accurate? Could the real boundary be larger than I've defined?")
         parts.append("  - Is my eval.py rigorous enough? Would it catch subtle errors or edge cases?")
         parts.append("  - Am I being too lenient? Would a skeptical reviewer trust my evaluation?")
-        parts.append("  - If records > denominator, should I expand the denominator instead of accepting >100% coverage?")
+        parts.append("  - If outputs > denominator, should I expand the denominator instead of accepting >100% coverage?")
 
         # Previous metrics
         if history:
@@ -583,7 +583,7 @@ def _build_evaluator_context(
                 for reason in saturation_reasons:
                     parts.append(f"  - {reason}")
                 parts.append("  Before stopping, explicitly audit completeness:")
-                parts.append("    - Name adjacent sources / query approaches you have NOT checked")
+                parts.append("    - Name adjacent directions (sources, approaches, dimensions) you have NOT checked")
                 parts.append("    - Try at least one, or rule it out with specific reason")
                 parts.append("    - Document unexplored directions as knowledge entries for future runs")
 
