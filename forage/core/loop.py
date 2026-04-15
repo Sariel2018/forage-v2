@@ -542,6 +542,13 @@ def _build_evaluator_context(
     else:
         parts.append("\nThis is Round 2+. Please audit the previous results and decide whether to continue.")
 
+        # Self-audit checklist — every round, not just when coverage is met
+        parts.append("\n🔍 Self-audit checklist (ask yourself EVERY round):")
+        parts.append("  - Is my denominator still accurate? Could there be sources I haven't discovered?")
+        parts.append("  - Is my eval.py rigorous enough? Would it catch subtle errors or edge cases?")
+        parts.append("  - Am I being too lenient? Would a skeptical reviewer trust my evaluation?")
+        parts.append("  - If records > denominator, should I expand the denominator instead of accepting >100% coverage?")
+
         # Previous metrics
         if history:
             last = history[-1]

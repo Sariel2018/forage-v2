@@ -62,10 +62,19 @@ def write_knowledge_entry(
     knowledge_dir: Path,
     entry: dict,
 ) -> Path:
-    """Write a single knowledge entry as a .md file.
+    """Write a single knowledge entry as a .md file (append-only).
 
     entry should have: id, scope, type, summary, content, source_tasks
     Returns the path of the written file.
+
+    Append-only design: if an entry with the same id already exists in the
+    target scope, we DO NOT overwrite it. Instead, we auto-suffix with _v2,
+    _v3, ... Each run's observations are preserved; v3 camp manager will
+    handle aggregation and deduplication across versions.
+
+    This enforces the principle "a single expedition's evidence is a new
+    data point, not a refutation of prior wisdom" (see
+    memory/knowledge_append_mostly_design.md).
     """
     scope = entry.get("scope", "universal")
     scope_dir = knowledge_dir / scope
@@ -73,6 +82,14 @@ def write_knowledge_entry(
 
     file_id = entry["id"]
     path = scope_dir / f"{file_id}.md"
+
+    # Append-only: if same id already exists, auto-version the new entry
+    if path.exists():
+        n = 2
+        while (scope_dir / f"{file_id}_v{n}.md").exists():
+            n += 1
+        path = scope_dir / f"{file_id}_v{n}.md"
+        file_id = f"{file_id}_v{n}"  # reflect in frontmatter
 
     frontmatter = (
         f"---\n"

@@ -129,8 +129,22 @@ Write action.py to your private workspace before responding.
 and extract transferable lessons for future tasks.
 
 Focus on lessons that would help OTHER tasks, not task-specific details.
-Check the Knowledge Base Index first — if a similar lesson already exists,
-update it rather than creating a new one.
+
+## Append-only knowledge base
+
+This knowledge base is append-only: every expedition's observations are
+preserved as-is. If a similar lesson already exists in INDEX.md, do NOT
+try to overwrite it. Instead, choose one of:
+
+- **If your observation agrees**: skip — no new lesson needed
+- **If your observation differs or refines**: write a lesson with a clearly
+  different id (e.g., describe the nuance or context that distinguishes it).
+  Don't pretend to "replace" prior wisdom — a single run's evidence is a
+  new data point, not a refutation.
+- **If your observation is genuinely novel**: write with a fresh id.
+
+A future camp manager (v3) will aggregate and curate observations across
+many runs. Your job is honest recording, not editing the library.
 
 For each lesson, output a JSON array:
 [{
