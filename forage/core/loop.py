@@ -688,30 +688,28 @@ def _count_total_records(shared_ws: Path) -> int:
 
 
 def _stage_knowledge(knowledge_dir: str, shared_ws: Path, spec: TaskSpec):
-    """Copy relevant knowledge files to the shared workspace (v2).
+    """Copy ALL accumulated knowledge to the shared workspace (v2).
 
     Staged copy lives in ``shared_ws/knowledge`` so both Evaluator and Planner
     see the same knowledge through their ``./shared/knowledge/`` symlink path.
     After post-mortem, the staged copy is synced back to the persistent
     ``knowledge_dir``.
+
+    All scopes are staged (universal, task_type, and any agent-created scopes like
+    ``bioinformatics_api`` or ``data_collection_evaluation``). Earlier versions
+    only staged universal + task_type, which silently discarded most accumulated
+    knowledge and broke the Knowledge Evolution claim.
     """
     import shutil
     src = Path(knowledge_dir)
     dst = shared_ws / "knowledge"
-    dst.mkdir(exist_ok=True)
+    if not src.exists():
+        dst.mkdir(exist_ok=True)
+        return
 
-    # Always copy universal/
-    if (src / "universal").exists():
-        shutil.copytree(src / "universal", dst / "universal", dirs_exist_ok=True)
-
-    # Copy task-type-specific scope
-    task_type = getattr(spec, 'task_type', 'web_scraping')
-    if task_type and (src / task_type).exists():
-        shutil.copytree(src / task_type, dst / task_type, dirs_exist_ok=True)
-
-    # Copy INDEX.md
-    if (src / "INDEX.md").exists():
-        shutil.copy(src / "INDEX.md", dst / "INDEX.md")
+    # Copy the entire knowledge tree — all scopes + INDEX.md.
+    # dirs_exist_ok=True handles the case where dst was pre-populated (e.g. seeded).
+    shutil.copytree(src, dst, dirs_exist_ok=True)
 
 
 def _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, ws: RunWorkspaces, results_dir):
