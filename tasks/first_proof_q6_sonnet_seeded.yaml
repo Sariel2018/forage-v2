@@ -1,0 +1,54 @@
+task:
+  name: "first_proof_q6_sonnet_seeded"
+  description: |
+    Solve Question 6 from the First Proof benchmark (Daniel Spielman).
+
+    For a graph G = (V, E), let G_S = (V, E(S, S)) denote the graph with the same
+    vertex set, but only the edges between vertices in S. Let L be the Laplacian matrix
+    of G and let L_S be the Laplacian of G_S.
+
+    Say that a set of vertices S is ε-light if the matrix εL - L_S is positive semidefinite.
+
+    Does there exist a constant c > 0 so that for every graph G and every ε between
+    0 and 1, V contains an ε-light subset S of size at least c·ε·|V|?
+
+    Either prove the statement or provide a counterexample. The solution must be rigorous:
+    formal proofs with clear logical structure, computational evidence from testing on
+    diverse graph families (random, regular, sparse, dense), and explicit construction
+    of the set S or the counterexample.
+  task_type: "math_research"
+
+target:
+  topic: "Existence of epsilon-light vertex subsets in graphs"
+  time_range:
+    start: ""
+    end: ""
+  doc_type: "mathematical solution"
+  language: "en"
+
+coverage:
+  target: 1.00
+  mode: "soft"
+  dimensions: []
+
+quality:
+  min_text_length: 0
+  required_fields: []
+
+budget:
+  max_rounds: 8
+  max_requests: 1000
+  max_runtime_minutes: 180
+  max_turns_per_agent: 50
+  effort: "high"
+  model: "sonnet"
+
+risk:
+  respect_robots_txt: true
+  max_requests_per_minute: 30
+
+sources:
+  seed_sources: []
+  preferred_sources:
+    - "arxiv.org"
+    - "scholar.google.com"

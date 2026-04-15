@@ -1,0 +1,43 @@
+task:
+  name: "uniprot_t2d_sonnet_seeded_deep"
+  description: "Collect all proteins directly associated with human Type 2 Diabetes, including protein name, gene name, function, involved signaling pathways, and known disease-associated variants. Cross-validate across multiple data sources."
+  task_type: "api"
+
+target:
+  topic: "Type 2 Diabetes related proteins"
+  time_range:
+    start: ""
+    end: ""
+  doc_type: "protein records"
+  language: "en"
+
+coverage:
+  target: 0.90
+  mode: "soft"
+  dimensions:
+    - protein
+    - pathway
+    - record
+
+quality:
+  min_text_length: 0
+  required_fields:
+    - protein_name
+    - gene_name
+    - function
+
+budget:
+  max_rounds: 8
+  max_requests: 5000
+  max_runtime_minutes: 180
+  model: "sonnet"
+
+risk:
+  respect_robots_txt: true
+  max_requests_per_minute: 60
+
+sources:
+  seed_sources: []
+  preferred_sources:
+    - "uniprot.org"
+    - "rest.uniprot.org"

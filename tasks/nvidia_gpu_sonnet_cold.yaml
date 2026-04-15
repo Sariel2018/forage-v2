@@ -1,0 +1,43 @@
+task:
+  name: "nvidia_gpu_1990_2024_sonnet_cold"
+  description: "Collect a complete list of NVIDIA desktop graphics card products released from 1990 to 2024, including product series, product name, chip name, release date, bus interface, memory capacity, memory type, memory bit width, core frequency, and memory frequency"
+  task_type: "web_scraping"
+
+target:
+  topic: "NVIDIA desktop GPU products"
+  time_range:
+    start: "1990"
+    end: "2024"
+  doc_type: "product specifications"
+  language: "en"
+
+coverage:
+  target: 0.90
+  mode: "soft"
+  dimensions:
+    - product_series
+    - record
+
+quality:
+  min_text_length: 0
+  required_fields:
+    - product_name
+    - chip_name
+    - release_date
+
+budget:
+  max_rounds: 8
+  max_requests: 5000
+  max_runtime_minutes: 180
+  model: "sonnet"
+
+risk:
+  respect_robots_txt: true
+  max_requests_per_minute: 30
+
+sources:
+  seed_sources: []
+  preferred_sources:
+    - "techpowerup.com"
+    - "wikipedia.org"
+    - "nvidia.com"

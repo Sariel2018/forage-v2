@@ -1,0 +1,57 @@
+task:
+  name: "first_proof_q10_sonnet_cold"
+  description: |
+    Solve Question 10 from the First Proof benchmark (Tammy Kolda).
+
+    Given a d-way tensor T with missing entries, we compute a CP decomposition of rank r
+    where some modes are infinite-dimensional and constrained to a Reproducing Kernel
+    Hilbert Space (RKHS). The mode-k subproblem requires solving:
+
+      [(Z ⊗ K)^T S S^T (Z ⊗ K) + λ(I_r ⊗ K)] vec(W) = (I_r ⊗ K) vec(B)
+
+    This is a system of size nr × nr. Direct solve costs O(n³r³).
+
+    Explain how an iterative preconditioned conjugate gradient linear solver can be used
+    to solve this problem more efficiently. Explain the method and choice of preconditioner.
+    Explain in detail how the matrix-vector products are computed and why this works.
+    Provide complexity analysis. Assume n, r < q ≪ N. Avoid any computation of order N.
+
+    The solution must be rigorous: formal proofs, working implementation verified at
+    multiple scales, and complexity claims backed by empirical benchmarks.
+  task_type: "math_research"
+
+target:
+  topic: "Preconditioned CG for RKHS-constrained CP tensor decomposition"
+  time_range:
+    start: ""
+    end: ""
+  doc_type: "mathematical solution"
+  language: "en"
+
+coverage:
+  target: 1.00
+  mode: "soft"
+  dimensions: []
+
+quality:
+  min_text_length: 0
+  required_fields: []
+
+budget:
+  max_rounds: 8
+  max_requests: 1000
+  max_runtime_minutes: 180
+  max_turns_per_agent: 50
+  effort: "high"
+  model: "sonnet"
+
+risk:
+  respect_robots_txt: true
+  max_requests_per_minute: 30
+
+sources:
+  seed_sources: []
+  preferred_sources:
+    - "arxiv.org"
+    - "mathscinet.ams.org"
+    - "scholar.google.com"
