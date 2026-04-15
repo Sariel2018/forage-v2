@@ -37,6 +37,7 @@ class BaseAgent:
         self.session_id = str(uuid.uuid4())
         self.round_count = 0
         self.effort = "medium"  # default, overridden by spec
+        self.model = "opus"  # default, overridden by spec
 
     @property
     def system_prompt(self) -> str:
@@ -161,6 +162,7 @@ class BaseAgent:
             "--dangerously-skip-permissions",
             "--disable-slash-commands",
             "--effort", self.effort,
+            "--model", self.model,
         ]
 
         if self.round_count == 0:

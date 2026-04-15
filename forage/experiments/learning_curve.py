@@ -42,6 +42,7 @@ def run_learning_curve(
             "max_rounds": spec.budget.max_rounds,
             "max_turns_per_agent": spec.budget.max_turns_per_agent,
             "effort": spec.budget.effort,
+            "model": spec.budget.model,
             "max_requests": spec.budget.max_requests,
             "max_runtime_minutes": spec.budget.max_runtime_minutes,
         },

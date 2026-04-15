@@ -21,6 +21,9 @@ class QualitySpec:
     dedup: bool = True
 
 
+KNOWN_MODEL_ALIASES = {"opus", "sonnet", "haiku"}
+
+
 @dataclass
 class BudgetSpec:
     max_rounds: int
@@ -28,6 +31,16 @@ class BudgetSpec:
     max_requests: int
     max_turns_per_agent: int = 15
     effort: str = "medium"
+    model: str = "opus"
+
+    def __post_init__(self):
+        if (self.model not in KNOWN_MODEL_ALIASES
+                and not self.model.startswith("claude-")):
+            raise ValueError(
+                f"Unknown model '{self.model}'. "
+                f"Use an alias ({', '.join(sorted(KNOWN_MODEL_ALIASES))}) "
+                f"or a full model ID (e.g. 'claude-sonnet-4-6')."
+            )
 
 
 @dataclass

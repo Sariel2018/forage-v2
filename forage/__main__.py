@@ -27,6 +27,12 @@ def main():
     run_parser.add_argument("spec", help="Path to task spec YAML")
     run_parser.add_argument("--output", default="output", help="Output directory")
     run_parser.add_argument("--knowledge", default=None, help="Path to knowledge directory")
+    run_parser.add_argument("--max-turns", type=int, default=None,
+                            help="Override max_turns_per_agent from task spec")
+    run_parser.add_argument("--effort", default=None, choices=["low", "medium", "high", "max"],
+                            help="Override effort level from task spec")
+    run_parser.add_argument("--model", default=None,
+                            help="Override model from task spec (e.g. opus, sonnet, haiku)")
 
     # --- forage experiment ---
     exp_parser = subparsers.add_parser("experiment", help="Run comparative experiments")
@@ -55,6 +61,8 @@ def main():
                               help="Override max_turns_per_agent from task spec")
     learn_parser.add_argument("--effort", default=None, choices=["low", "medium", "high", "max"],
                               help="Override effort level from task spec")
+    learn_parser.add_argument("--model", default=None,
+                              help="Override model from task spec (e.g. opus, sonnet, haiku)")
 
     # --- forage report ---
     report_parser = subparsers.add_parser("report", help="Generate HTML report from trajectory")
@@ -65,6 +73,12 @@ def main():
 
     if args.command == "run":
         spec = TaskSpec.from_yaml(args.spec)
+        if args.max_turns is not None:
+            spec.budget.max_turns_per_agent = args.max_turns
+        if args.effort is not None:
+            spec.budget.effort = args.effort
+        if args.model is not None:
+            spec.budget.model = args.model
         run(spec, output_dir=args.output, knowledge_dir=args.knowledge)
 
     elif args.command == "experiment":
@@ -85,6 +99,8 @@ def main():
             spec.budget.max_turns_per_agent = args.max_turns
         if args.effort is not None:
             spec.budget.effort = args.effort
+        if args.model is not None:
+            spec.budget.model = args.model
         from .experiments.learning_curve import run_learning_curve
         run_learning_curve(
             spec=spec,

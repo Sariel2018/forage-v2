@@ -1,32 +1,23 @@
-# Forage Task Spec: Oil & Gold Price vs Geopolitical Events Analysis
-# Multi-source data fusion + analysis + report generation
+# Forage Task Spec: Oil & Gold — Investor's Open-Ended Inquiry
+# Phase 2 showcase — vague user request, long-horizon exploration
 
 task:
   name: "oil_gold_geopolitics_2026"
   description: |
-    Collect daily oil (WTI crude) and gold prices since January 2026, and identify
-    all major geopolitical events (Iran tensions, Trump administration policies,
-    OPEC decisions, sanctions, military actions) that coincided with significant
-    price movements (>3% daily change).
+    一位资深投资人注意到 2026 年以来油价和金价波动频繁，但不确定哪些波动是
+    真实由地缘/政策事件驱动，哪些是市场噪声。他希望你帮他梳理清楚全貌，并给
+    他一份他能在周一早会上使用的研究报告（PDF）。
 
-    Produce a professional analysis report that:
-    - Lists all significant price movement dates with magnitude and direction
-    - Links each movement to concurrent geopolitical events with evidence
-    - Includes data visualizations (price charts with event annotations)
-    - Assesses correlation strength (not just coincidence)
-    - Cites all data sources
-
-    The report should be suitable for a senior financial analyst audience.
-    Statistical rigor expected: distinguish correlation from noise,
-    acknowledge uncertainty, provide confidence assessments.
+    报告需要足够严谨以经得起资深金融分析师的审视：每个 claim 有数据或引用
+    支撑，区分真实关联与市场噪声，对结论给出置信度评估，承认分析的局限性。
   task_type: "multi_source_analysis"
 
 target:
-  topic: "Oil and gold price movements correlated with geopolitical events in 2026"
+  topic: "Oil and gold price movements in 2026"
   time_range:
     start: "2026-01-01"
     end: "2026-04-14"
-  doc_type: "analysis report"
+  doc_type: "investor research report (PDF)"
   language: "en"
 
 coverage:
@@ -40,10 +31,11 @@ quality:
 
 budget:
   max_rounds: 8
-  max_requests: 5000
-  max_runtime_minutes: 240
+  max_requests: 10000
+  max_runtime_minutes: 480
   max_turns_per_agent: 50
   effort: "high"
+  model: "opus"
 
 risk:
   respect_robots_txt: true
@@ -55,3 +47,5 @@ sources:
     - "finance.yahoo.com"
     - "reuters.com"
     - "bloomberg.com"
+    - "ft.com"
+    - "wsj.com"

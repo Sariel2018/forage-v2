@@ -99,3 +99,29 @@ def test_two_agents_have_different_sessions():
     agent2 = BaseAgent.__new__(BaseAgent)
     agent2.__init__(workspace="/tmp/test_workspace_session_2")
     assert agent1.session_id != agent2.session_id
+
+
+def test_model_defaults_to_opus():
+    """model attribute defaults to 'opus'."""
+    agent = BaseAgent.__new__(BaseAgent)
+    agent.__init__(workspace="/tmp/test_workspace_session")
+    assert agent.model == "opus"
+
+
+def test_build_command_includes_model():
+    """_build_command includes --model flag."""
+    agent = BaseAgent.__new__(BaseAgent)
+    agent.__init__(workspace="/tmp/test_workspace_session")
+    cmd = agent._build_command("hello")
+    idx = cmd.index("--model")
+    assert cmd[idx + 1] == "opus"
+
+
+def test_build_command_includes_custom_model():
+    """_build_command passes through custom model."""
+    agent = BaseAgent.__new__(BaseAgent)
+    agent.__init__(workspace="/tmp/test_workspace_session")
+    agent.model = "sonnet"
+    cmd = agent._build_command("hello")
+    idx = cmd.index("--model")
+    assert cmd[idx + 1] == "sonnet"

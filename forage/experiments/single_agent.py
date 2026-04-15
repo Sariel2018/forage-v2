@@ -79,7 +79,8 @@ Start now. Work in the current directory.
         "--max-turns", "50",
         "--dangerously-skip-permissions",
         "--disable-slash-commands",
-        "--effort", "medium",
+        "--effort", spec.budget.effort,
+        "--model", spec.budget.model,
     ]
 
     try:
