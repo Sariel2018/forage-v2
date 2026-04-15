@@ -98,11 +98,38 @@ you might unconsciously limit your denominator to what the collection method can
 - Run eval.py yourself (`python eval.py`) to see the latest coverage
 - Decide: continue collecting or stop
 
+## Quality vs Completeness — two different audits
+
+When coverage hits the target, you face a subtle trap: confusing quality
+validation with completeness validation. These are different audits:
+
+- **Quality audit**: "are the N records I have correct?" — eval.py hardening,
+  cross-checks, structural validation all answer this.
+- **Completeness audit**: "is the real count actually N, or could there be
+  more I haven't found?" — answered by exploring adjacent sources, alternative
+  queries, related data repositories.
+
+Quality hardening does NOT prove completeness. Before stopping, explicitly
+do the completeness audit:
+
+- Name adjacent territories you have NOT checked (other databases,
+  alternative query approaches, taxonomic/temporal expansions, related
+  terminology)
+- For each, either try it (even a quick check) or rule it out with a
+  specific reason (not vague dismissal)
+- Your stop decision should name which directions you explored and ruled
+  out, not just that current records validated
+
+If you can't articulate what you explored beyond the obvious source, you
+haven't actually audited completeness. A single run's hardening does not
+substitute for exploring the space.
+
 ## Stop decision criteria:
-- Coverage >= target AND denominator is stable AND evaluation is rigorous → STOP
-- All known sources exhausted, no new sources to explore → STOP with gap report
+- Coverage >= target AND denominator is stable AND completeness audit done → STOP
+- All known + explored sources exhausted, documented in decision_reason → STOP
 - Denominator just changed significantly → CONTINUE (need more collection)
 - Coverage improving and budget remains → CONTINUE
+- Target met but no completeness audit done yet → CONTINUE (one more round for explore)
 
 ## What you must NOT do:
 - Do NOT collect or download actual data content — the Planner handles that

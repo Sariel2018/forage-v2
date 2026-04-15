@@ -556,12 +556,37 @@ def _build_evaluator_context(
             parts.append(f"\nPrevious round coverage: {last_coverage:.1%}")
             parts.append(f"Total records so far: {last.records_total}")
 
-            # Signal: if target reached early, push Evaluator to deepen verification
+            # Saturation detection — soft hint to trigger explore mode
+            # Three signals: fast target hit / denominator stable / over-collection
+            saturation_reasons = []
             if last_coverage >= spec.coverage.target and round_id <= 3:
-                parts.append(f"\n⚠ Coverage reached target in Round {round_id - 1}. Before stopping, ask yourself:")
-                parts.append(f"  - Is your eval.py testing at sufficient scale and rigor?")
-                parts.append(f"  - Would the results hold with larger inputs, harder edge cases, or adversarial tests?")
-                parts.append(f"  - You have {spec.budget.max_rounds - round_id + 1} rounds remaining — use them to DEEPEN verification if needed.")
+                saturation_reasons.append(
+                    f"target hit in Round {round_id - 1} (suspiciously fast — may be incomplete)"
+                )
+            if eval_result_history and len(eval_result_history) >= 3:
+                recent = [str(e.get("denominator")) for e in eval_result_history[-3:]]
+                if len(set(recent)) == 1 and recent[0] != "None":
+                    saturation_reasons.append(
+                        f"denominator stable at {recent[-1]} for 3+ rounds (may be stuck in current frame)"
+                    )
+            last_denom = last.metrics.get("denominator")
+            if isinstance(last_denom, (int, float)) and last_denom > 0:
+                records_ratio = last.records_total / last_denom
+                if records_ratio > 1.1:
+                    saturation_reasons.append(
+                        f"records ({last.records_total}) > denominator ({last_denom}) by {records_ratio:.0%} "
+                        f"— denominator may be under-counted"
+                    )
+
+            if saturation_reasons:
+                parts.append("\n🧭 Saturation signal — consider explore mode:")
+                for reason in saturation_reasons:
+                    parts.append(f"  - {reason}")
+                parts.append("  Before stopping, explicitly audit completeness:")
+                parts.append("    - Name adjacent sources / query approaches you have NOT checked")
+                parts.append("    - Try at least one, or rule it out with specific reason")
+                parts.append("    - Document unexplored directions as knowledge entries for future runs")
+
             if last.metrics.get("gaps"):
                 parts.append(f"Gaps:\n{json.dumps(last.metrics['gaps'], indent=2)}")
 
