@@ -2,7 +2,8 @@
 
 v2 changes (2026-04-03):
 - Evaluator is auditor + stop decision maker (Selector removed)
-- Method isolation: eval.py hidden from Planner, action.py hidden from Evaluator
+- Method isolation: dual-workspace layout (eval_ws/plan_ws/shared) replaces
+  the previous dotfile-hide trick (2026-04-14 refactor)
 - Richer context: denominator history, strategy summaries, discoveries
 - No keep/discard: data accumulates, eval.py handles dedup
 - Evaluator runs eval.py internally within its LLM call
@@ -11,6 +12,22 @@ v2 loop restructure:
 - Agents created once per run (explorer team mode with persistent sessions)
 - Post-mortem phase: agents extract transferable lessons after run completes
 - Trajectory persistence: structured per-round data saved as JSON
+
+Workspace layout (v2, 2026-04-14):
+
+    ws.root/
+      eval_ws/        # Evaluator's private cwd (eval.py lives here)
+        shared -> ../shared
+      plan_ws/        # Planner's private cwd (action.py lives here)
+        shared -> ../shared
+      shared/         # Public contract surface; both agents see this
+        dataset/
+        metrics.json
+        eval_contract.md
+        knowledge/
+
+Isolation is enforced architecturally: each agent only sees the other's work
+through the shared directory. No more ``_hide_file`` / ``_restore_file``.
 """
 
 import json
@@ -20,6 +37,7 @@ from pathlib import Path
 
 from .spec import TaskSpec
 from .trajectory import Trajectory
+from .workspace import RunWorkspaces, build_run_workspaces, cleanup_workspaces
 from ..agents.evaluator import EvaluatorAgent
 from ..agents.planner import PlannerAgent
 from ..agents.executor import ExecutionResult, execute_collection, run_eval_script
@@ -51,15 +69,26 @@ def run(
     """Main Forage loop v2.
 
     Modes:
-      full         — Evaluator + Planner with method isolation (M, M-exp groups)
-      no_isolation — Evaluator + Planner without method isolation (M-no-iso group)
+      full         — Evaluator + Planner with method isolation (M, M-exp groups).
+                     Dual-workspace layout: eval_ws/plan_ws/shared with symlinks
+                     so neither agent can see the other's script.
+      no_isolation — M-no-iso ablation. Single shared workspace — both agents
+                     operate in the same directory and can see each other's
+                     scripts (eval.py / action.py). ``shared/`` remains a real
+                     subdir so path references are identical to the other modes.
+                     Everything else (post-mortem, knowledge, trajectory) works
+                     as in ``full`` mode. Use to measure the effect of isolation
+                     on knowledge quality / co-evolution behavior.
       freeze_eval  — Evaluator runs only Round 1, frozen after (M-co-eval group)
       no_eval      — No independent Evaluator, Planner self-evaluates (M-no-eval group)
     """
-    import tempfile
     import sys
-    workspace = Path(tempfile.mkdtemp(prefix=f"forage_{spec.name}_"))
-    (workspace / "dataset").mkdir(exist_ok=True)
+
+    # M-no-iso ablation: use a single shared workspace instead of dual-ws.
+    # Path references (ws.eval_script, ws.metrics_json, ws.dataset, ...) still
+    # resolve correctly because ``shared/`` is a real subdir under root.
+    isolated = (mode != "no_isolation")
+    ws = build_run_workspaces(prefix=f"forage_{spec.name}_", isolated=isolated)
 
     results_dir = Path(output_dir) / spec.name
     results_dir.mkdir(parents=True, exist_ok=True)
@@ -70,13 +99,13 @@ def run(
     sys.stdout = _log_tee
 
     try:
-        return _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enable_post_mortem)
+        return _run_inner(spec, ws, results_dir, knowledge_dir, mode, log_path, enable_post_mortem)
     finally:
         sys.stdout = _log_tee.terminal
         _log_tee.close()
 
 
-def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enable_post_mortem=True):
+def _run_inner(spec, ws: RunWorkspaces, results_dir, knowledge_dir, mode, log_path, enable_post_mortem=True):
     """Inner run body — separated so stdout tee is always restored via try/finally."""
     from datetime import datetime, timezone
 
@@ -87,8 +116,16 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
     planner_summaries: list[dict] = []
 
     # v2: create agents ONCE per run (explorer team mode)
-    evaluator = EvaluatorAgent(workspace=str(workspace), knowledge_dir=knowledge_dir)
-    planner = PlannerAgent(workspace=str(workspace), knowledge_dir=knowledge_dir)
+    evaluator = EvaluatorAgent(
+        private_ws=str(ws.eval_ws),
+        shared_ws=str(ws.shared),
+        knowledge_dir=knowledge_dir,
+    )
+    planner = PlannerAgent(
+        private_ws=str(ws.plan_ws),
+        shared_ws=str(ws.shared),
+        knowledge_dir=knowledge_dir,
+    )
 
     # Apply budget params from task spec
     evaluator.max_turns = spec.budget.max_turns_per_agent
@@ -98,9 +135,9 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
     evaluator.model = spec.budget.model
     planner.model = spec.budget.model
 
-    # v2: stage knowledge files to workspace
+    # v2: stage knowledge files to the SHARED workspace so both agents see them
     if knowledge_dir:
-        _stage_knowledge(knowledge_dir, workspace, spec)
+        _stage_knowledge(knowledge_dir, ws.shared, spec)
 
     # v2: trajectory tracking
     trajectory = Trajectory(spec.name, {
@@ -122,7 +159,14 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
         "max_runtime_minutes": spec.budget.max_runtime_minutes,
     }
 
-    print(f"  Isolated workspace: {workspace}")
+    print(f"  Run root: {ws.root}")
+    if ws.eval_ws == ws.plan_ws == ws.root:
+        print(f"    (non-isolated: single shared workspace — both agents use root)")
+        print(f"    shared:   {ws.shared}")
+    else:
+        print(f"    eval_ws:  {ws.eval_ws}")
+        print(f"    plan_ws:  {ws.plan_ws}")
+        print(f"    shared:   {ws.shared}")
 
     print(f"\n{'#'*60}")
     print(f"# Forage v2: {spec.name}")
@@ -149,10 +193,10 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             # M-no-eval: skip independent Evaluator entirely
             print("\n  [1/3] Evaluator: SKIPPED (no-eval mode, Planner self-evaluates)")
 
-        elif mode == "freeze_eval" and round_id > 1 and (workspace / "eval.py").is_file():
+        elif mode == "freeze_eval" and round_id > 1 and ws.eval_script.is_file():
             # M-co-eval: frozen after Round 1
             print("\n  [1/3] Evaluator: FROZEN (using round 1 eval.py)")
-            metrics = run_eval_script(workspace, "eval.py")
+            metrics = run_eval_script(ws.eval_ws, ws.shared, "eval.py")
             if metrics.get("error"):
                 print(f"         ERROR: eval.py failed: {metrics['error']}")
             coverage = _safe_coverage(metrics)
@@ -163,30 +207,22 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
                 print(f"         Decision: STOP (target reached)")
 
         else:
-            # Full mode: run Evaluator
+            # Full mode: run Evaluator (isolation is architectural — no hide/restore)
             label = "exploring data universe" if round_id == 1 else "auditing results"
             print(f"\n  [1/3] Evaluator: {label}...")
 
-            # METHOD ISOLATION: hide action.py before calling Evaluator (skip in no_isolation mode)
-            if mode != "no_isolation":
-                _hide_file(workspace / "action.py")
-
             eval_context = _build_evaluator_context(
-                spec, history, workspace, eval_result_history, planner_summaries,
+                spec, history, ws, eval_result_history, planner_summaries,
             )
             eval_result = evaluator.run_with_recovery(eval_context, trajectory=trajectory)
             round_cost += evaluator.cost_usd
             _merge_usage(round_usage, evaluator.usage)
 
-            # Restore action.py
-            if mode != "no_isolation":
-                _restore_file(workspace / "action.py")
-
             # Unified fallback: if Evaluator response is bad, check workspace
             eval_ok = "denominator" in eval_result or "eval_script_path" in eval_result
             if not eval_ok:
                 reason = eval_result.get("error", eval_result.get("text", "unknown")[:200])
-                if (workspace / "eval.py").is_file():
+                if ws.eval_script.is_file():
                     print(f"         WARNING: Evaluator response unusable ({reason[:100]}), but eval.py exists — proceeding")
                     salvaged = evaluator._salvage_from_workspace()
                     if salvaged:
@@ -222,8 +258,8 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             if decision == "stop":
                 should_stop = True
 
-            # Read latest metrics from workspace (Evaluator may have run eval.py internally)
-            metrics_path = workspace / "metrics.json"
+            # Read latest metrics from shared workspace (Evaluator may have run eval.py internally)
+            metrics_path = ws.metrics_json
             if metrics_path.is_file():
                 try:
                     metrics = json.loads(metrics_path.read_text())
@@ -235,7 +271,7 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             coverage = _safe_coverage(metrics)
             duration = time.time() - t0
             total_cost_usd += round_cost
-            records_total = _count_total_records(workspace)
+            records_total = _count_total_records(ws.shared)
             result = RoundResult(
                 round_id=round_id, strategy={}, records_collected=0,
                 records_total=records_total, metrics=metrics,
@@ -275,29 +311,21 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
         # --- Step 2: Planner ---
         print("\n  [2/3] Planner: proposing strategy...")
 
-        # METHOD ISOLATION: hide eval.py before calling Planner (skip in no_isolation mode)
-        if mode != "no_isolation":
-            _hide_file(workspace / "eval.py")
-
         plan_context = _build_planner_context(
-            spec, history, workspace, eval_result_history, mode,
+            spec, history, ws, eval_result_history, mode,
         )
         plan_result = planner.run_with_recovery(plan_context, trajectory=trajectory)
         round_cost += planner.cost_usd
         _merge_usage(round_usage, planner.usage)
 
-        # Restore eval.py
-        if mode != "no_isolation":
-            _restore_file(workspace / "eval.py")
-
         # Unified fallback: if Planner response is bad, check workspace
         plan_ok = "strategy_name" in plan_result or "action_script_path" in plan_result
         if not plan_ok:
             reason = plan_result.get("error", plan_result.get("text", "unknown")[:200])
-            if (workspace / "action.py").is_file():
+            if ws.action_script.is_file():
                 print(f"         WARNING: Planner response unusable ({str(reason)[:100]}), but action.py exists — proceeding")
                 strategy = planner._salvage_from_workspace() or {"strategy_name": "salvaged", "action_script_path": "action.py"}
-            elif any((workspace / "dataset").rglob("*")):
+            elif any(ws.dataset.rglob("*")):
                 # Math tasks: Planner may write directly to dataset/ without action.py
                 print(f"         WARNING: No action.py but dataset/ has content — skipping Executor, running eval.py only")
                 strategy = {"strategy_name": "direct_write", "action_script_path": None, "_skip_executor": True}
@@ -331,7 +359,8 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
             print("\n  [3/3] Executor: running collection script...")
             action_script = strategy.get("action_script_path", "action.py")
             exec_result = execute_collection(
-                workspace=workspace,
+                plan_ws=ws.plan_ws,
+                shared_ws=ws.shared,
                 script_path=action_script,
                 timeout=spec.budget.max_runtime_minutes * 60 // spec.budget.max_rounds,
             )
@@ -342,15 +371,15 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
 
         # --- Step 4: Run eval.py (deterministic, for next round's Evaluator) ---
         eval_script = "eval.py"
-        if (workspace / eval_script).is_file():
-            metrics = run_eval_script(workspace, eval_script)
+        if ws.eval_script.is_file():
+            metrics = run_eval_script(ws.eval_ws, ws.shared, eval_script)
         coverage = _safe_coverage(metrics)
         print(f"         Coverage: {coverage:.1%}")
 
         # Record results
         duration = time.time() - t0
         total_cost_usd += round_cost
-        records_total = _count_total_records(workspace)
+        records_total = _count_total_records(ws.shared)
 
         result = RoundResult(
             round_id=round_id,
@@ -372,11 +401,11 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
         # v2: snapshot scripts per round (track strategy evolution)
         round_snapshots = results_dir / "round_snapshots" / f"r{round_id:02d}"
         round_snapshots.mkdir(parents=True, exist_ok=True)
-        for script_name in ["action.py", "eval.py"]:
-            script_path = workspace / script_name
-            if script_path.is_file():
-                import shutil
-                shutil.copy(script_path, round_snapshots / script_name)
+        import shutil
+        if ws.action_script.is_file():
+            shutil.copy(ws.action_script, round_snapshots / "action.py")
+        if ws.eval_script.is_file():
+            shutil.copy(ws.eval_script, round_snapshots / "eval.py")
 
         # v2: record trajectory
         trajectory.add_round({
@@ -414,23 +443,29 @@ def _run_inner(spec, workspace, results_dir, knowledge_dir, mode, log_path, enab
         "decision": history[-1].decision if history else "unknown",
         "final_coverage": _safe_coverage(metrics),
         "final_denominator": metrics.get("denominator", "unknown"),
-        "final_records": _count_total_records(workspace),
+        "final_records": _count_total_records(ws.shared),
     })
-    # v2: post-mortem phase (only for M+ group — M/M-exp don't accumulate)
-    if mode == "full" and knowledge_dir and enable_post_mortem:
-        pm_cost = _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, results_dir)
+    # v2: post-mortem phase (only for M+ / M+-no-iso groups — M/M-exp don't accumulate)
+    if mode in ("full", "no_isolation") and knowledge_dir and enable_post_mortem:
+        pm_cost = _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, ws, results_dir)
         total_cost_usd += pm_cost
         trajectory.data["total_cost_usd"] += pm_cost
 
     trajectory.save(results_dir / "trajectory.json")
 
-    # --- Final: copy workspace artifacts to results_dir ---
+    # --- Final: archive workspace artifacts to results_dir for debugging ---
     import shutil
     artifacts_dir = results_dir / "workspace"
     if artifacts_dir.exists():
         shutil.rmtree(artifacts_dir)
-    shutil.copytree(workspace, artifacts_dir)
-    shutil.rmtree(workspace, ignore_errors=True)  # clean up; debug via results_dir/workspace/
+    try:
+        # symlinks=True keeps the shared-symlinks inside eval_ws/plan_ws intact.
+        shutil.copytree(ws.root, artifacts_dir, symlinks=True)
+    except (OSError, shutil.Error) as exc:
+        # Archival is best-effort; a broken symlink shouldn't kill the run.
+        print(f"  WARNING: workspace archival failed ({exc}); continuing")
+
+    cleanup_workspaces(ws.root)
 
     _write_final_outputs(history, metrics, total_cost_usd, results_dir, artifacts_dir)
 
@@ -483,7 +518,7 @@ class _LogTee:
 def _build_evaluator_context(
     spec: TaskSpec,
     history: list[RoundResult],
-    workspace: Path | None,
+    ws: RunWorkspaces,
     eval_result_history: list[dict],
     planner_summaries: list[dict],
 ) -> str:
@@ -529,9 +564,9 @@ def _build_evaluator_context(
             for e in eval_result_history:
                 parts.append(f"  R{e['round']}: {e['denominator']} (source: {e.get('denominator_source', '?')}, confidence: {e.get('denominator_confidence', '?')})")
 
-        # Previous eval.py content summary
-        if workspace and (workspace / "eval.py").is_file():
-            eval_content = (workspace / "eval.py").read_text()
+        # Previous eval.py content summary (lives in eval_ws, not shared)
+        if ws and ws.eval_script.is_file():
+            eval_content = ws.eval_script.read_text()
             lines = eval_content.splitlines()[:80]
             parts.append(f"\nYour previous eval.py (first {len(lines)} lines):\n```python\n" + "\n".join(lines) + "\n```")
 
@@ -544,7 +579,7 @@ def _build_evaluator_context(
     # Format reminder (prevents drift in persistent sessions)
     parts.append("\n## IMPORTANT: Output format")
     parts.append("Respond with a JSON object containing: denominator, denominator_source, denominator_confidence, discovery, decision, decision_reason.")
-    parts.append("Write eval.py to the workspace before responding.")
+    parts.append("Write eval.py to your private workspace before responding.")
 
     return "\n".join(parts)
 
@@ -552,7 +587,7 @@ def _build_evaluator_context(
 def _build_planner_context(
     spec: TaskSpec,
     history: list[RoundResult],
-    workspace: Path,
+    ws: RunWorkspaces,
     eval_result_history: list[dict],
     mode: str,
 ) -> str:
@@ -568,11 +603,10 @@ def _build_planner_context(
         f"\nRound: {len(history) + 1}",
     ]
 
-    # Include metrics from eval.py if available
-    metrics_path = workspace / "metrics.json"
-    if metrics_path.is_file():
+    # Include metrics from eval.py if available (lives in shared/)
+    if ws and ws.metrics_json.is_file():
         try:
-            m = json.loads(metrics_path.read_text())
+            m = json.loads(ws.metrics_json.read_text())
             parts.append(f"\nCurrent metrics:\n{json.dumps(m, indent=2)}")
         except json.JSONDecodeError:
             pass
@@ -608,30 +642,13 @@ def _build_planner_context(
         parts.append("You must also decide whether to stop or continue collecting.")
         parts.append("Add to your output JSON: \"decision\": \"continue\" or \"stop\", \"decision_reason\": \"...\"")
 
-    parts.append("\nPropose a collection strategy and write action.py.")
+    parts.append("\nPropose a collection strategy and write action.py to your private workspace.")
 
     # Format reminder (prevents drift in persistent sessions)
     parts.append("\n## IMPORTANT: Output format")
     parts.append("Respond with a JSON object containing: strategy_name, strategy_description, target_source, expected_records, action_script_path.")
 
     return "\n".join(parts)
-
-
-# --- Method isolation ---
-
-
-def _hide_file(path: Path):
-    """Hide a file by prefixing with dot (method isolation)."""
-    if path.is_file():
-        hidden = path.parent / f".{path.name}"
-        path.rename(hidden)
-
-
-def _restore_file(path: Path):
-    """Restore a hidden file."""
-    hidden = path.parent / f".{path.name}"
-    if hidden.is_file():
-        hidden.rename(path)
 
 
 # --- Helpers ---
@@ -652,9 +669,9 @@ def _merge_usage(target: dict, source: dict):
             target[key] = target.get(key, 0) + source[key]
 
 
-def _count_total_records(workspace: Path) -> int:
-    """Count total records in dataset/ directory only."""
-    dataset_dir = workspace / "dataset"
+def _count_total_records(shared_ws: Path) -> int:
+    """Count total records in shared_ws/dataset/ directory only."""
+    dataset_dir = shared_ws / "dataset"
     if not dataset_dir.is_dir():
         return 0
     total = 0
@@ -670,11 +687,17 @@ def _count_total_records(workspace: Path) -> int:
     return total
 
 
-def _stage_knowledge(knowledge_dir: str, workspace: Path, spec: TaskSpec):
-    """Copy relevant knowledge files to agent workspace (v2)."""
+def _stage_knowledge(knowledge_dir: str, shared_ws: Path, spec: TaskSpec):
+    """Copy relevant knowledge files to the shared workspace (v2).
+
+    Staged copy lives in ``shared_ws/knowledge`` so both Evaluator and Planner
+    see the same knowledge through their ``./shared/knowledge/`` symlink path.
+    After post-mortem, the staged copy is synced back to the persistent
+    ``knowledge_dir``.
+    """
     import shutil
     src = Path(knowledge_dir)
-    dst = workspace / "knowledge"
+    dst = shared_ws / "knowledge"
     dst.mkdir(exist_ok=True)
 
     # Always copy universal/
@@ -691,8 +714,14 @@ def _stage_knowledge(knowledge_dir: str, workspace: Path, spec: TaskSpec):
         shutil.copy(src / "INDEX.md", dst / "INDEX.md")
 
 
-def _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, results_dir):
-    """Run post-mortem: each agent extracts lessons from the run (v2)."""
+def _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, ws: RunWorkspaces, results_dir):
+    """Run post-mortem: each agent extracts lessons from the run (v2).
+
+    Agents write lessons into their private/shared workspaces; we harvest the
+    structured JSON response, persist ``write_knowledge_entry`` to the real
+    ``knowledge_dir``, then sync the staged shared knowledge tree back so any
+    raw .md files the agents dropped there make it to persistent storage.
+    """
     from .knowledge import write_knowledge_entry, regenerate_index
 
     knowledge_path = Path(knowledge_dir)
@@ -731,12 +760,20 @@ def _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, workspace, r
         if isinstance(lesson, dict) and "id" in lesson:
             write_knowledge_entry(knowledge_path, lesson)
 
-    # Regenerate INDEX
-    if all_lessons:
+    # Sync staged knowledge back to the persistent knowledge_dir — the agents
+    # see ``./shared/knowledge/`` as their working copy, and any raw files they
+    # wrote there need to land in the real knowledge_dir before next run.
+    import shutil
+    staged_knowledge = ws.knowledge  # ws.shared / "knowledge"
+    if staged_knowledge.is_dir():
+        shutil.copytree(staged_knowledge, knowledge_path, dirs_exist_ok=True)
+
+    # Regenerate INDEX (covers both the structured writes above and any raw
+    # .md files picked up by the sync).
+    if all_lessons or staged_knowledge.is_dir():
         regenerate_index(knowledge_path)
 
     # Save knowledge snapshot
-    import shutil
     snapshot_dir = results_dir / "knowledge_snapshot"
     if snapshot_dir.exists():
         shutil.rmtree(snapshot_dir)

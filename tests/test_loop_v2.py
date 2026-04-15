@@ -2,39 +2,14 @@
 import inspect
 import json
 from pathlib import Path
-from forage.core.loop import run, _build_evaluator_context, _build_planner_context, _hide_file, _restore_file
+from forage.core.loop import run, _build_evaluator_context, _build_planner_context
+from forage.core.workspace import build_run_workspaces, cleanup_workspaces
 
 
 def test_run_signature_v2():
     """run() should accept mode parameter."""
     sig = inspect.signature(run)
     assert "mode" in sig.parameters
-
-
-def test_hide_restore_file(tmp_path):
-    """Method isolation: hide and restore files."""
-    f = tmp_path / "test.py"
-    f.write_text("hello")
-
-    _hide_file(f)
-    assert not f.exists()
-    assert (tmp_path / ".test.py").exists()
-
-    _restore_file(f)
-    assert f.exists()
-    assert f.read_text() == "hello"
-
-
-def test_hide_nonexistent_file(tmp_path):
-    """Hiding a file that doesn't exist should not crash."""
-    f = tmp_path / "nonexistent.py"
-    _hide_file(f)  # should not raise
-
-
-def test_restore_nonexistent_file(tmp_path):
-    """Restoring a file that was never hidden should not crash."""
-    f = tmp_path / "nonexistent.py"
-    _restore_file(f)  # should not raise
 
 
 def test_evaluator_context_round1():
@@ -49,7 +24,7 @@ def test_evaluator_context_round1():
         budget=BudgetSpec(max_rounds=5, max_runtime_minutes=60, max_requests=1000),
         risk=RiskSpec(), sources=SourcesSpec(),
     )
-    ctx = _build_evaluator_context(spec, history=[], workspace=None, eval_result_history=[], planner_summaries=[])
+    ctx = _build_evaluator_context(spec, history=[], ws=None, eval_result_history=[], planner_summaries=[])
     assert "Round: 1" in ctx
     assert "Round 1" in ctx
 
@@ -75,7 +50,7 @@ def test_evaluator_context_round2_has_denominator_history():
     eval_history = [{"round": 1, "denominator": 200, "denominator_source": "sitemap", "denominator_confidence": "medium"}]
     planner_summaries = [{"round": 1, "strategy_name": "sitemap_crawl", "target_source": "https://example.com/sitemap.xml"}]
 
-    ctx = _build_evaluator_context(spec, history, workspace=None, eval_result_history=eval_history, planner_summaries=planner_summaries)
+    ctx = _build_evaluator_context(spec, history, ws=None, eval_result_history=eval_history, planner_summaries=planner_summaries)
     assert "sitemap_crawl" in ctx
     assert "200" in ctx
     assert "Round: 2" in ctx
@@ -96,9 +71,10 @@ def test_planner_context_has_discovery():
     eval_history = [{"round": 1, "denominator": 1650, "denominator_source": "CDX", "denominator_confidence": "high",
                      "discovery": "CDX wildcard reveals 1650 articles", "new_sources_found": ["https://web.archive.org/cdx"]}]
 
-    import tempfile
-    with tempfile.TemporaryDirectory() as tmpdir:
-        ws = Path(tmpdir)
-        ctx = _build_planner_context(spec, history=[], workspace=ws, eval_result_history=eval_history, mode="full")
+    ws = build_run_workspaces(prefix="test_planner_ctx_")
+    try:
+        ctx = _build_planner_context(spec, history=[], ws=ws, eval_result_history=eval_history, mode="full")
         assert "CDX wildcard" in ctx
         assert "1650" in ctx
+    finally:
+        cleanup_workspaces(ws.root)

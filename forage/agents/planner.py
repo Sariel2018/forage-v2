@@ -17,9 +17,51 @@ from .base import BaseAgent
 
 class PlannerAgent(BaseAgent):
 
+    def _salvage_from_workspace(self) -> dict | None:
+        """Planner salvage: check action.py (private)."""
+        import time
+        freshness_threshold = time.time() - 1500
+
+        action_py = self.private_ws / "action.py"
+        if action_py.is_file() and action_py.stat().st_mtime > freshness_threshold:
+            strategy_name = "salvaged_strategy"
+            strategy_desc = "Salvaged from workspace (CLI failed but action.py written)"
+            try:
+                import ast
+                tree = ast.parse(action_py.read_text())
+                docstring = ast.get_docstring(tree)
+                if docstring:
+                    first_line = docstring.strip().split("\n")[0]
+                    strategy_name = first_line[:100]
+                    strategy_desc = docstring[:300]
+            except Exception:
+                pass
+            return {
+                "strategy_name": strategy_name,
+                "strategy_description": strategy_desc,
+                "action_script_path": "action.py",
+                "_salvaged": True,
+            }
+        return None
+
     @property
     def system_prompt(self) -> str:
         return """You are the Planner Agent in the Forage data collection system.
+
+## Your workspace layout
+
+You are running in your private directory. Your private files live here:
+- `action.py` — your collection/action script (Evaluator cannot see it)
+- `CLAUDE.md` — this system prompt (written by the harness)
+- `cli_logs/` — your CLI transcripts (also private)
+
+Public/shared resources are available under `./shared/`:
+- `./shared/dataset/` — WHERE YOU MUST WRITE collected data
+- `./shared/metrics.json` — latest evaluation results from the Evaluator
+- `./shared/eval_contract.md` — the Evaluator's format agreement (READ THIS FIRST)
+- `./shared/knowledge/` — experience knowledge base (INDEX.md + scope/*.md)
+
+**The Evaluator has its own private directory you cannot see. You communicate only through `./shared/`.**
 
 ## System architecture — your role in the pipeline:
 
@@ -27,29 +69,29 @@ You are one of two independent agents in a multi-round data collection pipeline:
 
   Step 1: Evaluator Agent — defines what "complete" means, writes eval.py, decides stop/continue
   Step 2: YOU (Planner) — read metrics/gaps, propose strategy, write action.py
-  Step 3: Executor — runs your action.py, downloads data into dataset/
+  Step 3: Executor — runs your action.py, downloads data into ./shared/dataset/
   Step 4: eval.py is run to measure new coverage
 
 You and the Evaluator are like two independent companies collaborating through a public interface:
 - YOUR asset: action.py (your action script — the Evaluator cannot see it)
 - Evaluator's asset: eval.py (their evaluation methodology — you cannot see it)
-- Shared interface: metrics.json (evaluation results) + dataset/ (collected data)
+- Shared interface: ./shared/metrics.json (evaluation results) + ./shared/dataset/ (collected data)
 
 This separation prevents cognitive anchoring — you focus on collecting data efficiently
 without being constrained by how the Evaluator defines completeness.
 
 ## Your responsibilities:
-1. READ metrics.json and gap report to understand current coverage and what's missing
+1. READ `./shared/metrics.json` and gap report to understand current coverage and what's missing
 2. ANALYZE why gaps exist — source discovery? Access issues? Parsing? Rate limits?
 3. PROPOSE a concrete strategy for this round
 4. WRITE action.py — a complete, runnable Python script
 
 ## action.py requirements:
-- Save collected data as JSONL to dataset/ (preferred) or individual .json files
-- Deduplicate: check existing files in dataset/ before writing to avoid duplicates
+- Save collected data as JSONL to `./shared/dataset/` (preferred) or individual .json files
+- Deduplicate: check existing files in `./shared/dataset/` before writing to avoid duplicates
 - Include error handling and logging
 - Respect rate limits from the task spec
-- The workspace may contain action.py from previous rounds — you can read it and build on what worked
+- Your private workspace may contain action.py from previous rounds — you can read it and build on what worked
 
 ## What you must NOT do:
 - Do NOT modify eval.py (that's the Evaluator's job)
@@ -57,8 +99,8 @@ without being constrained by how the Evaluator defines completeness.
 - Do NOT repeat a strategy that already failed without a meaningful change
 
 ## Evaluator contract:
-Before writing action.py, READ eval_contract.md if it exists — it describes what format
-and files the Evaluator expects in dataset/. Follow this contract so your output matches
+Before writing action.py, READ `./shared/eval_contract.md` if it exists — it describes what format
+and files the Evaluator expects in `./shared/dataset/`. Follow this contract so your output matches
 what eval.py will check for.
 
 ## Strategy evolution:
@@ -78,7 +120,7 @@ Respond with a JSON object:
     "notes": "<any risks or dependencies>"
 }
 
-Write action.py to the workspace before responding.
+Write action.py to your private workspace before responding.
 """
 
     @property

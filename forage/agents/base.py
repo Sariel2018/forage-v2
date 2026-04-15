@@ -28,9 +28,27 @@ class BaseAgent:
 
     max_turns = 15
 
-    def __init__(self, workspace: str, knowledge_dir: str | None = None):
-        self.workspace = Path(workspace)
-        self.workspace.mkdir(parents=True, exist_ok=True)
+    def __init__(
+        self,
+        workspace: str | None = None,           # DEPRECATED but still accepted
+        knowledge_dir: str | None = None,
+        private_ws: str | None = None,          # NEW: agent's private cwd
+        shared_ws: str | None = None,           # NEW: shared dir path
+    ):
+        # Accept either old (workspace=) or new (private_ws + shared_ws) API
+        if private_ws is not None:
+            self.private_ws = Path(private_ws)
+            self.shared_ws = Path(shared_ws) if shared_ws else self.private_ws
+        elif workspace is not None:
+            # Old API: private == shared (single workspace compat)
+            self.private_ws = Path(workspace)
+            self.shared_ws = Path(workspace)
+        else:
+            raise ValueError("Must pass either workspace= or private_ws=")
+
+        # self.workspace stays as alias to private_ws for minimal churn
+        self.workspace = self.private_ws
+        self.private_ws.mkdir(parents=True, exist_ok=True)
         self.knowledge_dir = knowledge_dir
         self.cost_usd = 0.0
         self.usage = {}  # full token usage from claude CLI
@@ -70,56 +88,11 @@ class BaseAgent:
         Returns a fallback result dict if work is found, None otherwise.
         Only salvages if files were modified AFTER the CLI call started
         (prevents returning stale data from previous rounds).
+
+        Default implementation does nothing. Subclasses (EvaluatorAgent,
+        PlannerAgent) override this with role-specific salvage logic that
+        knows which files live in private_ws vs shared_ws.
         """
-        import json as _json
-        import time
-
-        # Threshold: files must be modified within the last 25 min
-        # (max_turns=15 @ ~1min each + buffer)
-        freshness_threshold = time.time() - 1500
-
-        # Evaluator: eval.py + metrics.json (both must be fresh)
-        eval_py = self.workspace / "eval.py"
-        metrics_json = self.workspace / "metrics.json"
-        if (eval_py.is_file() and metrics_json.is_file()
-                and eval_py.stat().st_mtime > freshness_threshold
-                and metrics_json.stat().st_mtime > freshness_threshold):
-            try:
-                metrics = _json.loads(metrics_json.read_text())
-                return {
-                    "eval_script_path": "eval.py",
-                    "denominator": metrics.get("denominator", "unknown"),
-                    "denominator_source": metrics.get("denominator_source", "salvaged from metrics.json"),
-                    "denominator_confidence": "medium",
-                    "decision": "continue",
-                    "decision_reason": "Salvaged from workspace (CLI failed but work completed)",
-                    "_salvaged": True,
-                }
-            except (ValueError, KeyError):
-                pass
-
-        # Planner: action.py (must be fresh)
-        action_py = self.workspace / "action.py"
-        if action_py.is_file() and action_py.stat().st_mtime > freshness_threshold:
-            # Try to extract strategy name from action.py docstring
-            strategy_name = "salvaged_strategy"
-            strategy_desc = "Salvaged from workspace (CLI failed but action.py written)"
-            try:
-                import ast
-                tree = ast.parse(action_py.read_text())
-                docstring = ast.get_docstring(tree)
-                if docstring:
-                    first_line = docstring.strip().split("\n")[0]
-                    strategy_name = first_line[:100]
-                    strategy_desc = docstring[:300]
-            except Exception:
-                pass
-            return {
-                "strategy_name": strategy_name,
-                "strategy_description": strategy_desc,
-                "action_script_path": "action.py",
-                "_salvaged": True,
-            }
         return None
 
     def _save_cli_output(self, result) -> None:

@@ -3,6 +3,9 @@ import tempfile
 import uuid
 from pathlib import Path
 from unittest.mock import patch, MagicMock
+
+import pytest
+
 from forage.agents.base import BaseAgent
 
 
@@ -125,3 +128,106 @@ def test_build_command_includes_custom_model():
     cmd = agent._build_command("hello")
     idx = cmd.index("--model")
     assert cmd[idx + 1] == "sonnet"
+
+
+# --- New API: per-role workspace isolation -------------------------------
+
+
+def test_new_api_private_and_shared_ws():
+    """BaseAgent(private_ws=..., shared_ws=...) sets both attributes correctly."""
+    with tempfile.TemporaryDirectory() as d:
+        priv = Path(d) / "private"
+        shared = Path(d) / "shared"
+        priv.mkdir()
+        shared.mkdir()
+        agent = BaseAgent.__new__(BaseAgent)
+        agent.__init__(private_ws=str(priv), shared_ws=str(shared))
+        assert agent.private_ws == priv
+        assert agent.shared_ws == shared
+        assert agent.private_ws != agent.shared_ws
+        # workspace alias points to private_ws
+        assert agent.workspace == priv
+
+
+def test_old_api_sets_both_to_same():
+    """BaseAgent(workspace=...) sets private_ws == shared_ws == workspace."""
+    with tempfile.TemporaryDirectory() as d:
+        agent = BaseAgent.__new__(BaseAgent)
+        agent.__init__(workspace=d)
+        assert agent.private_ws == Path(d)
+        assert agent.shared_ws == Path(d)
+        assert agent.private_ws == agent.shared_ws
+        assert agent.workspace == Path(d)
+
+
+def test_missing_both_raises():
+    """BaseAgent() with no workspace/private_ws raises ValueError."""
+    agent = BaseAgent.__new__(BaseAgent)
+    with pytest.raises(ValueError):
+        agent.__init__()
+
+
+def test_new_api_shared_defaults_to_private():
+    """If only private_ws is passed, shared_ws defaults to private_ws."""
+    with tempfile.TemporaryDirectory() as d:
+        priv = Path(d) / "private"
+        priv.mkdir()
+        agent = BaseAgent.__new__(BaseAgent)
+        agent.__init__(private_ws=str(priv))
+        assert agent.private_ws == priv
+        assert agent.shared_ws == priv
+
+
+def test_build_command_uses_private_ws_as_cwd():
+    """run() uses private_ws as the subprocess cwd."""
+    with tempfile.TemporaryDirectory() as d:
+        priv = Path(d) / "private"
+        shared = Path(d) / "shared"
+        priv.mkdir()
+        shared.mkdir()
+
+        # Give the agent a concrete system_prompt so run() doesn't raise.
+        class _FakeAgent(BaseAgent):
+            @property
+            def system_prompt(self) -> str:
+                return "fake system prompt"
+
+        agent = _FakeAgent(private_ws=str(priv), shared_ws=str(shared))
+
+        fake_result = MagicMock()
+        fake_result.returncode = 0
+        fake_result.stdout = '{"type":"result","result":"{}","total_cost_usd":0.0,"usage":{}}'
+        fake_result.stderr = ""
+
+        with patch("forage.agents.base.subprocess.run", return_value=fake_result) as mock_run:
+            agent.run("hello")
+            # cwd kwarg should be private_ws string, not shared_ws
+            _, kwargs = mock_run.call_args
+            assert kwargs["cwd"] == str(priv)
+            assert kwargs["cwd"] != str(shared)
+
+
+def test_evaluator_prompt_uses_shared_paths():
+    """Evaluator system_prompt references shared/ not raw paths."""
+    from forage.agents.evaluator import EvaluatorAgent
+    agent = EvaluatorAgent.__new__(EvaluatorAgent)
+    agent.__init__(workspace="/tmp/test_eval_prompt")
+    prompt = agent.system_prompt
+    # New paths must be present
+    assert "shared/dataset" in prompt
+    assert "shared/metrics.json" in prompt
+    assert "shared/eval_contract.md" in prompt
+    # Workspace layout section
+    assert "Your workspace layout" in prompt
+
+
+def test_planner_prompt_uses_shared_paths():
+    """Planner system_prompt references shared/ not raw paths."""
+    from forage.agents.planner import PlannerAgent
+    agent = PlannerAgent.__new__(PlannerAgent)
+    agent.__init__(workspace="/tmp/test_plan_prompt")
+    prompt = agent.system_prompt
+    assert "shared/dataset" in prompt
+    assert "shared/metrics.json" in prompt
+    assert "shared/eval_contract.md" in prompt
+    assert "Your workspace layout" in prompt
