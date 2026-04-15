@@ -753,13 +753,50 @@ def _run_post_mortem(evaluator, planner, trajectory, knowledge_dir, ws: RunWorks
     plan_lessons = planner.run(plan_pm_message)
     pm_cost += planner.cost_usd
 
-    # Extract and write lessons
+    # Extract and write lessons — permissive parsing to avoid silent drops.
+    # Agents may return JSON in several shapes: [...], {"items": [...]},
+    # {"lessons": [...]}, or even a single lesson dict. Drop nothing silently.
     all_lessons = []
-    for lessons_result in [eval_lessons, plan_lessons]:
-        if isinstance(lessons_result, dict) and "items" in lessons_result:
-            all_lessons.extend(lessons_result["items"])
-        elif isinstance(lessons_result, list):
-            all_lessons.extend(lessons_result)
+    dropped_responses = []
+
+    def _extract_lessons(result, source: str):
+        """Pull out a list of lesson dicts from whatever shape the agent returned."""
+        if result is None:
+            return
+        if isinstance(result, list):
+            all_lessons.extend(result)
+            return
+        if isinstance(result, dict):
+            # Look for any list-valued key that contains dict entries with 'id'
+            for key in ("items", "lessons", "entries", "results"):
+                val = result.get(key)
+                if isinstance(val, list):
+                    all_lessons.extend(val)
+                    return
+            # Single lesson dict with 'id' field
+            if "id" in result and "scope" in result:
+                all_lessons.append(result)
+                return
+            # Nothing recognizable — log raw response for audit
+            dropped_responses.append((source, result))
+        else:
+            dropped_responses.append((source, result))
+
+    _extract_lessons(eval_lessons, "evaluator")
+    _extract_lessons(plan_lessons, "planner")
+
+    # Save raw responses that couldn't be parsed, for audit
+    if dropped_responses:
+        import json as _json
+        audit_dir = results_dir / "post_mortem_audit"
+        audit_dir.mkdir(exist_ok=True)
+        for source, raw in dropped_responses:
+            audit_path = audit_dir / f"{source}_raw.json"
+            try:
+                audit_path.write_text(_json.dumps(raw, indent=2, default=str))
+            except Exception:
+                audit_path.write_text(str(raw))
+            print(f"  Warning: post-mortem {source} response unrecognized — raw saved to {audit_path}")
 
     for lesson in all_lessons:
         if isinstance(lesson, dict) and "id" in lesson:

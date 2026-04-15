@@ -22,6 +22,7 @@ class QualitySpec:
 
 
 KNOWN_MODEL_ALIASES = {"opus", "sonnet", "haiku"}
+KNOWN_EFFORT_LEVELS = {"low", "medium", "high", "max"}
 
 
 @dataclass
@@ -40,6 +41,11 @@ class BudgetSpec:
                 f"Unknown model '{self.model}'. "
                 f"Use an alias ({', '.join(sorted(KNOWN_MODEL_ALIASES))}) "
                 f"or a full model ID (e.g. 'claude-sonnet-4-6')."
+            )
+        if self.effort not in KNOWN_EFFORT_LEVELS:
+            raise ValueError(
+                f"Unknown effort '{self.effort}'. "
+                f"Must be one of: {', '.join(sorted(KNOWN_EFFORT_LEVELS))}."
             )
 
 

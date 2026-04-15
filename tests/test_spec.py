@@ -16,6 +16,19 @@ def test_budget_spec_model_custom():
     assert budget.model == "sonnet"
 
 
+def test_budget_spec_effort_valid():
+    """BudgetSpec accepts low/medium/high/max."""
+    for level in ["low", "medium", "high", "max"]:
+        b = BudgetSpec(max_rounds=8, max_runtime_minutes=180, max_requests=5000, effort=level)
+        assert b.effort == level
+
+
+def test_budget_spec_effort_invalid():
+    """BudgetSpec rejects unknown effort levels."""
+    with pytest.raises(ValueError, match="Unknown effort"):
+        BudgetSpec(max_rounds=8, max_runtime_minutes=180, max_requests=5000, effort="extreme")
+
+
 def test_from_yaml_loads_model(tmp_path):
     """TaskSpec.from_yaml loads model field from YAML."""
     yaml_content = """\
