@@ -43,7 +43,7 @@ budget:
   max_runtime_minutes: 180
   max_turns_per_agent: 50
   effort: "high"
-  model: "sonnet"
+  model: "claude-sonnet-4-6"
 
 risk:
   respect_robots_txt: true

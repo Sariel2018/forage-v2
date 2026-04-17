@@ -58,6 +58,7 @@ def execute_collection(
     shared_ws: Path,
     script_path: str = "action.py",
     timeout: int = 1800,  # 30 min default
+    round_id: int = 0,
 ) -> ExecutionResult:
     """Run Planner's action.py with cwd=plan_ws.
 
@@ -111,11 +112,20 @@ def execute_collection(
         if records == 0:
             records = _count_records(dataset_dir)
 
+        # Archive full stdout/stderr to disk per round
+        log_dir = plan_ws / "cli_logs"
+        log_dir.mkdir(exist_ok=True)
+        prefix = f"r{round_id:02d}" if round_id > 0 else "r00"
+        if result.stdout:
+            (log_dir / f"{prefix}_executor_stdout.txt").write_text(result.stdout)
+        if result.stderr:
+            (log_dir / f"{prefix}_executor_stderr.txt").write_text(result.stderr)
+
         return ExecutionResult(
             records_collected=records,
             requests_used=requests,
             duration_seconds=duration,
-            stdout=result.stdout[-5000:],  # keep last 5K chars
+            stdout=result.stdout[-5000:],  # truncated for agent context
             stderr=result.stderr[-2000:],
             exit_code=result.returncode,
         )
@@ -135,7 +145,7 @@ def execute_collection(
         )
 
 
-def run_eval_script(eval_ws: Path, shared_ws: Path, eval_script: str = "eval.py") -> dict:
+def run_eval_script(eval_ws: Path, shared_ws: Path, eval_script: str = "eval.py", round_id: int = 0) -> dict:
     """Run Evaluator's eval.py with cwd=eval_ws.
 
     eval.py reads from ./shared/dataset/ (via symlink) and writes metrics.json
@@ -160,6 +170,15 @@ def run_eval_script(eval_ws: Path, shared_ws: Path, eval_script: str = "eval.py"
         timeout=120,
         cwd=str(eval_ws),
     )
+
+    # Archive eval.py stdout/stderr per round
+    log_dir = eval_ws / "cli_logs"
+    log_dir.mkdir(exist_ok=True)
+    prefix = f"r{round_id:02d}" if round_id > 0 else "r00"
+    if result.stdout:
+        (log_dir / f"{prefix}_eval_stdout.txt").write_text(result.stdout)
+    if result.stderr:
+        (log_dir / f"{prefix}_eval_stderr.txt").write_text(result.stderr)
 
     if result.returncode != 0:
         return {

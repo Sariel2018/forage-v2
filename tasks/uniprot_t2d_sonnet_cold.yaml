@@ -30,7 +30,7 @@ budget:
   max_rounds: 8
   max_requests: 5000
   max_runtime_minutes: 180
-  model: "sonnet"
+  model: "claude-sonnet-4-6"
 
 risk:
   respect_robots_txt: true

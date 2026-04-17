@@ -114,16 +114,16 @@ def test_budget_spec_accepts_full_model_id():
 
 
 def test_nvidia_sonnet_cold_spec_loads():
-    """nvidia_gpu_sonnet_cold.yaml loads with model='sonnet'."""
+    """nvidia_gpu_sonnet_cold.yaml loads with pinned model."""
     spec_path = Path(__file__).parent.parent / "tasks" / "nvidia_gpu_sonnet_cold.yaml"
     assert spec_path.exists(), "Expected task spec file missing"
     spec = TaskSpec.from_yaml(spec_path)
-    assert spec.budget.model == "sonnet"
+    assert spec.budget.model == "claude-sonnet-4-6"
 
 
 def test_nvidia_sonnet_seeded_spec_loads():
-    """nvidia_gpu_sonnet_seeded.yaml loads with model='sonnet'."""
+    """nvidia_gpu_sonnet_seeded.yaml loads with pinned model."""
     spec_path = Path(__file__).parent.parent / "tasks" / "nvidia_gpu_sonnet_seeded.yaml"
     assert spec_path.exists(), "Expected task spec file missing"
     spec = TaskSpec.from_yaml(spec_path)
-    assert spec.budget.model == "sonnet"
+    assert spec.budget.model == "claude-sonnet-4-6"

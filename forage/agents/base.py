@@ -104,8 +104,8 @@ class BaseAgent:
         # so +1 to get the current round number
         round_num = self.round_count + 1
         prefix = f"r{round_num:02d}_{agent_type}"
-        (log_dir / f"{prefix}_stdout.json").write_text(result.stdout[-50000:] if result.stdout else "")
-        (log_dir / f"{prefix}_stderr.txt").write_text(result.stderr[-5000:] if result.stderr else "")
+        (log_dir / f"{prefix}_stdout.json").write_text(result.stdout if result.stdout else "")
+        (log_dir / f"{prefix}_stderr.txt").write_text(result.stderr if result.stderr else "")
         # Save exit code
         (log_dir / f"{prefix}_exit.txt").write_text(str(result.returncode))
 
@@ -117,7 +117,7 @@ class BaseAgent:
         round_num = self.round_count + 1
         prefix = f"r{round_num:02d}_{agent_type}"
         stdout_str = stdout_bytes.decode("utf-8", errors="replace") if isinstance(stdout_bytes, bytes) else str(stdout_bytes)
-        (log_dir / f"{prefix}_stdout.json").write_text(stdout_str[-50000:])
+        (log_dir / f"{prefix}_stdout.json").write_text(stdout_str)
         (log_dir / f"{prefix}_exit.txt").write_text(f"timeout ({reason})")
 
     def _build_command(self, user_message: str) -> list[str]:

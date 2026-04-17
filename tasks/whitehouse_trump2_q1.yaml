@@ -31,6 +31,7 @@ budget:
   max_rounds: 8
   max_requests: 3000
   max_runtime_minutes: 120
+  model: "claude-opus-4-6"
 
 risk:
   respect_robots_txt: true

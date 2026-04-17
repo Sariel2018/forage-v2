@@ -35,7 +35,7 @@ budget:
   max_runtime_minutes: 480
   max_turns_per_agent: 50
   effort: "high"
-  model: "opus"
+  model: "claude-opus-4-6"
 
 risk:
   respect_robots_txt: true
