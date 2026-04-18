@@ -155,6 +155,7 @@ def _run_inner(spec, ws: RunWorkspaces, results_dir, knowledge_dir, mode, log_pa
         "effort": spec.budget.effort,
         "model": spec.budget.model,
         "agent_timeout_seconds": 1200,
+        "eval_timeout": spec.budget.eval_timeout,
         "max_requests": spec.budget.max_requests,
         "max_runtime_minutes": spec.budget.max_runtime_minutes,
     }
@@ -196,7 +197,7 @@ def _run_inner(spec, ws: RunWorkspaces, results_dir, knowledge_dir, mode, log_pa
         elif mode == "freeze_eval" and round_id > 1 and ws.eval_script.is_file():
             # M-co-eval: frozen after Round 1
             print("\n  [1/3] Evaluator: FROZEN (using round 1 eval.py)")
-            metrics = run_eval_script(ws.eval_ws, ws.shared, "eval.py", round_id=round_id)
+            metrics = run_eval_script(ws.eval_ws, ws.shared, "eval.py", round_id=round_id, timeout=spec.budget.eval_timeout)
             if metrics.get("error"):
                 print(f"         ERROR: eval.py failed: {metrics['error']}")
             coverage = _safe_coverage(metrics)
@@ -373,7 +374,7 @@ def _run_inner(spec, ws: RunWorkspaces, results_dir, knowledge_dir, mode, log_pa
         # --- Step 4: Run eval.py (deterministic, for next round's Evaluator) ---
         eval_script = "eval.py"
         if ws.eval_script.is_file():
-            metrics = run_eval_script(ws.eval_ws, ws.shared, eval_script, round_id=round_id)
+            metrics = run_eval_script(ws.eval_ws, ws.shared, eval_script, round_id=round_id, timeout=spec.budget.eval_timeout)
         coverage = _safe_coverage(metrics)
         print(f"         Coverage: {coverage:.1%}")
 

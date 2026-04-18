@@ -18,6 +18,7 @@ Workspace layout (v2):
 Scripts access the shared workspace via the ./shared/ symlink in their cwd.
 """
 
+import json
 import subprocess
 import sys
 import time
@@ -100,7 +101,6 @@ def execute_collection(
         requests = 0
         for line in result.stdout.splitlines():
             if line.startswith("FORAGE_RESULT:"):
-                import json
                 try:
                     data = json.loads(line[len("FORAGE_RESULT:"):])
                     records = data.get("records", 0)
@@ -145,7 +145,7 @@ def execute_collection(
         )
 
 
-def run_eval_script(eval_ws: Path, shared_ws: Path, eval_script: str = "eval.py", round_id: int = 0) -> dict:
+def run_eval_script(eval_ws: Path, shared_ws: Path, eval_script: str = "eval.py", round_id: int = 0, timeout: int = 120) -> dict:
     """Run Evaluator's eval.py with cwd=eval_ws.
 
     eval.py reads from ./shared/dataset/ (via symlink) and writes metrics.json
@@ -163,13 +163,29 @@ def run_eval_script(eval_ws: Path, shared_ws: Path, eval_script: str = "eval.py"
             "error": "eval.py not found",
         }
 
-    result = subprocess.run(
-        [sys.executable, str(full_path)],
-        capture_output=True,
-        text=True,
-        timeout=120,
-        cwd=str(eval_ws),
-    )
+    try:
+        result = subprocess.run(
+            [sys.executable, str(full_path)],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=str(eval_ws),
+        )
+    except subprocess.TimeoutExpired:
+        # eval.py took too long — write error to metrics.json so Evaluator sees it,
+        # and return error dict so harness doesn't crash
+        error_metrics = {
+            "coverage_estimate": 0.0,
+            "confidence_interval": [0.0, 0.0],
+            "coverage_by_dimension": {},
+            "gaps": {},
+            "error": f"eval.py timed out after {timeout}s — verification incomplete, results from previous round may still be valid",
+        }
+        try:
+            (shared_ws / "metrics.json").write_text(json.dumps(error_metrics, indent=2))
+        except OSError:
+            pass
+        return error_metrics
 
     # Archive eval.py stdout/stderr per round
     log_dir = eval_ws / "cli_logs"
@@ -192,7 +208,6 @@ def run_eval_script(eval_ws: Path, shared_ws: Path, eval_script: str = "eval.py"
 
     # Read metrics.json from shared workspace
     if metrics_path.is_file():
-        import json
         return json.loads(metrics_path.read_text())
 
     return {

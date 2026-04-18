@@ -47,6 +47,7 @@ budget:
   model: "claude-opus-4-6"
   max_turns_per_agent: 50
   effort: "high"
+  eval_timeout: 600  # math eval.py runs benchmarks, needs more than 120s
 
 risk:
   respect_robots_txt: true

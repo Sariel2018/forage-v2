@@ -33,6 +33,7 @@ class BudgetSpec:
     max_turns_per_agent: int = 15
     effort: str = "medium"
     model: str = "opus"
+    eval_timeout: int = 120  # seconds for eval.py execution; math tasks may need 600+
 
     def __post_init__(self):
         if (self.model not in KNOWN_MODEL_ALIASES
