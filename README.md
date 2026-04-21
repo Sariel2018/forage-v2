@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://arxiv.org/abs/TODO"><img src="https://img.shields.io/badge/arXiv-V2_Paper-b31b1b.svg" alt="arXiv V2"></a>
   <a href="https://arxiv.org/abs/TODO"><img src="https://img.shields.io/badge/arXiv-V1_Paper-b31b1b.svg" alt="arXiv V1"></a>
-  <a href="https://github.com/Sariel2018/forage-v2/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License"></a>
+  <a href="https://github.com/Sariel2018/forage-v2/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
 </p>
 
 ---
@@ -176,4 +176,4 @@ The V2 paper has been submitted to arXiv. This is a research prototype — contr
 
 ## License
 
-Apache 2.0
+MIT
