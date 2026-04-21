@@ -9,45 +9,106 @@
   across runs, models, and task types.
 </p>
 
+<p align="center">
+  <a href="https://arxiv.org/abs/TODO"><img src="https://img.shields.io/badge/arXiv-V2_Paper-b31b1b.svg" alt="arXiv V2"></a>
+  <a href="https://arxiv.org/abs/TODO"><img src="https://img.shields.io/badge/arXiv-V1_Paper-b31b1b.svg" alt="arXiv V1"></a>
+  <a href="https://github.com/Sariel2018/forage-v2/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License"></a>
+</p>
+
 ---
 
 ## The problem
 
 You ask an AI agent to do an open-ended task. It works for a while, declares victory, reports 100% complete. It found 15% of what exists.
 
-[Forage V1](https://github.com/Sariel2018/forage) solved this for single runs — splitting execution and evaluation into two isolated agents so neither can grade its own work. V1 called the problem **denominator blindness** and achieved 98.8% actual recall where a single agent stopped at 15.9%.
+We call this **denominator blindness** — the agent's numerator may be accurate, but it never discovered the denominator. Every current agent framework lets the agent grade its own work, and none of them catch this.
 
-But V1 teams start from scratch every time. Hard-won discoveries about the territory are lost between expeditions.
+## What Forage does differently
 
-## V2: The organization remembers
+Forage doesn't make individual agents stronger. It designs **institutions** — audit separation, contract protocols, organizational memory — that make ordinary agents reliable.
 
-Forage V2 extends the architecture from a single expedition to a **learning organization**. After each run, both agents independently write down what they learned. The next team reads the notebook before heading out.
+### Two agents, not one
 
-Over six runs, the organization accumulates 54 knowledge entries — which sources are reliable, what pitfalls exist, how the domain is structured. A weaker model (Sonnet), given a stronger model's (Opus) accumulated knowledge:
+One **explores** (the Planner), one **maps** (the Evaluator). They can't see each other's code — like an auditor who can't read the books they're auditing. The Evaluator doesn't check against a pre-written rubric. It *discovers* what "complete" means by independently exploring the problem space. Both evolve together.
 
-- **Closes a 6.6pp coverage gap to 1.1pp**
-- **Halves the cost** ($9.40 → $5.13)
-- **Converges in half the rounds** (mean 4.5 vs 7.0)
-- Three independent runs arrive at **exactly the same answer** (266 products)
+### The organization remembers
 
-The knowledge didn't make Sonnet smarter. It made Sonnet *not waste time rediscovering what Opus already knew*.
+After each run, both agents independently write down what they learned. The next team reads the notebook before heading out. Over six runs, the organization accumulates 54 knowledge entries — which sources are reliable, what pitfalls exist, how the domain is structured.
 
-## How it works
+### Knowledge transfers across models
 
-Two agents. One **explores** (the Planner), one **maps** (the Evaluator). They can't see each other's code — like an auditor who can't read the books they're auditing. The Evaluator doesn't check against a pre-written rubric. It *discovers* what "complete" means by independently exploring the problem space. Both evolve together.
+A weaker model, given a stronger model's accumulated knowledge, doesn't need to rediscover what the stronger model already knew.
 
-V2 adds three things:
-- **Knowledge evolution** — post-mortem lessons accumulate across runs as organizational memory
-- **Knowledge transfer** — a new agent (any model, any provider) inherits the organization's experience on day one
-- **Hardened isolation** — physical workspace separation, after we caught an agent peeking at the other's code
+## Key results
+
+| | Without Forage | Forage V1 | Forage V2 |
+|---|---|---|---|
+| **Self-reported coverage** | 100% | — | — |
+| **Actual coverage** | 15.9% | 98.8% | 99.7% |
+| **Knows when it's done** | No | Yes | Yes |
+| **Learns across runs** | No | No | Yes |
+
+### V2 knowledge transfer (NVIDIA GPU benchmark)
+
+| Metric | Sonnet (cold start) | Sonnet (with Opus knowledge) | Improvement |
+|---|---|---|---|
+| Coverage | 93.1% | 98.6% | +5.5pp |
+| Rounds to converge | 7.0 | 4.5 | 1.8x faster |
+| Cost per run | $9.40 | $5.13 | 45% cheaper |
+| Denominator agreement | Scattered (320–411) | Converged (266) | 3 runs, same answer |
+
+## Architecture
+
+```
+                    ┌─────────────────────────────────────────────┐
+  Within a Run      │                                             │
+                    │  ┌───────────┐   shared    ┌───────────┐   │
+                    │  │ Evaluator │◄──────────►│  Planner  │   │
+                    │  │ (eval.py) │  artifacts  │(action.py)│   │
+                    │  └───────────┘             └───────────┘   │
+                    │        ✗ no mutual code visibility ✗        │
+                    └─────────────────────────────────────────────┘
+                                        │
+                                   post-mortem
+                                        ▼
+                    ┌─────────────────────────────────────────────┐
+  Across Runs       │            Knowledge Base                   │
+                    │  ┌───────┐ ┌───────┐       ┌───────┐      │
+                    │  │ Run 1 │ │ Run 2 │  ...  │ Run N │      │
+                    │  └───────┘ └───────┘       └───────┘      │
+                    │                    │                        │
+                    │              transfer ───► Sonnet (seeded) │
+                    └─────────────────────────────────────────────┘
+```
+
+**Method isolation** is the core invariant. The Evaluator writes `eval.py` (how to measure); the Planner writes `action.py` (how to execute). Neither can read the other's script. They coordinate through a public `eval_contract.md` — like an auditor's terms of engagement.
+
+We caught an agent bypassing our original isolation mechanism (dotfile hiding) and executing the other agent's code. V2 uses **physical workspace separation** — each agent runs in its own directory with no access to the other's files.
+
+## Verified across task types
+
+| Task | Domain | Tool | What it tests |
+|---|---|---|---|
+| NVIDIA Desktop GPUs | Web scraping | Browser | Data collection at scale (265–411 candidates) |
+| UniProt T2D Proteins | API queries | REST API | Tool generalization (28–30 candidates) |
+| Q10 Mathematical Proof | Reasoning | Code execution | Non-collection task type |
+| Q6 Mathematical Proof | Hard reasoning | Code execution | Capability boundary |
 
 ## The vision
 
 <p align="center">
+  <img src="assets/start_ui.png" alt="Forage Start Screen" width="500">
+  <br>
+  <em>Your basecamp awaits.</em>
+</p>
+
+<p align="center">
   <img src="assets/ui_vision.png" alt="Forage Basecamp UI" width="700">
   <br>
-  <em>What the basecamp will look like — expedition management, team roster, knowledge assets.</em>
+  <em>Expedition management, team roster, knowledge assets.</em>
 </p>
+
+## Roadmap
 
 ```
 V1  Expedition     →  Two agents establish credible judgment
@@ -56,10 +117,13 @@ V3  Basecamp       →  A camp manager allocates resources dynamically
 V4  Highway        →  Verified routes crystallize into reusable pipelines
 ```
 
-## Papers
+**V1** solved the single-run problem: how do you know the agent actually finished? ([paper](https://arxiv.org/abs/TODO) | [code](https://github.com/Sariel2018/forage))
 
-- **V2**: Knowledge Evolution and Transfer in Autonomous Agent Organizations — [arXiv (coming soon)]()
-- **V1**: Solving Denominator Blindness via Co-Evolving Evaluation — [arXiv (coming soon)]() | [code](https://github.com/Sariel2018/forage)
+**V2** solves the multi-run problem: how does the organization learn? ([paper](https://arxiv.org/abs/TODO))
+
+**V3** will add a camp manager that dynamically allocates resources — adjusting turn budgets, swapping models, and curating the knowledge base based on accumulated experience.
+
+**V4** will crystallize verified routes into reusable pipelines — the trails blazed by explorers become highways for everyone.
 
 ## Status
 

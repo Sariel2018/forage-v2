@@ -38,8 +38,9 @@ references/
 paper/
 texput.log
 
-# Internal docs
-docs/
+# Internal docs (keep docs/site/ for GitHub Pages)
+docs/*
+!docs/site/
 CLAUDE.md
 README_CN.md
 logo/

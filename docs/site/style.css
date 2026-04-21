@@ -1,0 +1,429 @@
+/* Forage V2 — Research Showcase */
+
+:root {
+  --forest: #2d5016;
+  --forest-light: #3a6b1e;
+  --forest-pale: #f4f8f1;
+  --forest-mist: #e8f0e4;
+  --bark: #5c4a32;
+  --text: #1a1a1a;
+  --text-secondary: #555;
+  --text-muted: #888;
+  --bg: #fefefe;
+  --card-bg: #fff;
+  --border: #e0e0e0;
+  --max-w: 780px;
+  --max-w-wide: 960px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  font-size: 17px;
+}
+
+body {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Hero ────────────────────────────────────── */
+
+.hero {
+  text-align: center;
+  padding: 5rem 2rem 3rem;
+  background: linear-gradient(180deg, var(--forest-pale) 0%, var(--bg) 100%);
+}
+
+.hero-logo {
+  width: 200px;
+  margin-bottom: 1.2rem;
+}
+
+.hero h1 {
+  font-family: 'Georgia', serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--forest);
+  margin-bottom: 0.4rem;
+  letter-spacing: -0.01em;
+}
+
+.hero .tagline {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  max-width: 520px;
+  margin: 0 auto 2rem;
+  font-style: italic;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.6rem;
+  border-radius: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--forest);
+  color: #fff;
+  border: 2px solid var(--forest);
+}
+
+.btn-primary:hover {
+  background: var(--forest-light);
+  border-color: var(--forest-light);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--forest);
+  border: 2px solid var(--forest);
+}
+
+.btn-ghost:hover {
+  background: var(--forest-pale);
+}
+
+/* ── Navigation ──────────────────────────────── */
+
+nav.toc {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(254,254,254,0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 2rem;
+}
+
+nav.toc ul {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  list-style: none;
+  max-width: var(--max-w-wide);
+  margin: 0 auto;
+}
+
+nav.toc a {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+}
+
+nav.toc a:hover {
+  color: var(--forest);
+}
+
+/* ── Content sections ────────────────────────── */
+
+.content {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+section {
+  padding: 3.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+section:last-of-type {
+  border-bottom: none;
+}
+
+h2 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--forest);
+  margin-bottom: 1.2rem;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 2rem 0 0.8rem;
+}
+
+p {
+  margin-bottom: 1.2rem;
+}
+
+p + p {
+  margin-top: 0;
+}
+
+strong {
+  font-weight: 700;
+}
+
+em {
+  font-style: italic;
+}
+
+a {
+  color: var(--forest);
+  text-decoration: underline;
+  text-decoration-color: rgba(45,80,22,0.3);
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.2s;
+}
+
+a:hover {
+  text-decoration-color: var(--forest);
+}
+
+/* ── Pull quote ──────────────────────────────── */
+
+.pull-quote {
+  font-size: 1.3rem;
+  font-style: italic;
+  color: var(--forest);
+  border-left: 4px solid var(--forest);
+  padding: 0.8rem 0 0.8rem 1.5rem;
+  margin: 2rem 0;
+  line-height: 1.6;
+}
+
+/* ── Highlight box ───────────────────────────── */
+
+.highlight-box {
+  background: var(--forest-pale);
+  border: 1px solid var(--forest-mist);
+  border-radius: 8px;
+  padding: 1.5rem 1.8rem;
+  margin: 2rem 0;
+}
+
+.highlight-box h3 {
+  margin-top: 0;
+  color: var(--forest);
+}
+
+/* ── Key metrics strip ───────────────────────── */
+
+.metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1.2rem;
+  margin: 2rem 0;
+}
+
+.metric-card {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: var(--forest-pale);
+  border-radius: 8px;
+}
+
+.metric-card .number {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--forest);
+  line-height: 1.2;
+}
+
+.metric-card .label {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Tables ──────────────────────────────────── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.88rem;
+}
+
+thead th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text);
+  padding: 0.7rem 0.8rem;
+  border-bottom: 2px solid var(--text);
+}
+
+tbody td {
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+tbody tr:hover {
+  background: var(--forest-pale);
+}
+
+/* ── Figures ─────────────────────────────────── */
+
+figure {
+  margin: 2.5rem 0;
+}
+
+figure img {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+figcaption {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.6rem;
+  line-height: 1.5;
+}
+
+/* ── Wide figures ────────────────────────────── */
+
+figure.wide {
+  max-width: var(--max-w-wide);
+  margin-left: 50%;
+  transform: translateX(-50%);
+  padding: 0 2rem;
+}
+
+/* ── Vision images ───────────────────────────── */
+
+.vision-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.vision-gallery img {
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.vision-gallery .caption {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ── Roadmap ─────────────────────────────────── */
+
+.roadmap {
+  list-style: none;
+  position: relative;
+  padding-left: 2rem;
+}
+
+.roadmap::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--forest-mist);
+}
+
+.roadmap li {
+  position: relative;
+  padding: 0.8rem 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.95rem;
+}
+
+.roadmap li::before {
+  content: '';
+  position: absolute;
+  left: -2rem;
+  top: 1.15rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--forest-mist);
+  border: 2px solid var(--bg);
+}
+
+.roadmap li.current::before {
+  background: var(--forest);
+  box-shadow: 0 0 0 4px rgba(45,80,22,0.15);
+}
+
+.roadmap .version {
+  font-weight: 700;
+  color: var(--forest);
+}
+
+.roadmap .desc {
+  color: var(--text-secondary);
+}
+
+/* ── Footer ──────────────────────────────────── */
+
+footer {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-muted);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+footer .citation {
+  background: var(--forest-pale);
+  border-radius: 6px;
+  padding: 1.2rem 1.5rem;
+  max-width: var(--max-w);
+  margin: 0 auto 1.5rem;
+  text-align: left;
+  font-family: 'SFMono-Regular', 'Consolas', monospace;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+/* ── Responsive ──────────────────────────────── */
+
+@media (max-width: 640px) {
+  html { font-size: 16px; }
+  .hero { padding: 3rem 1.5rem 2rem; }
+  .hero h1 { font-size: 1.7rem; }
+  .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+  nav.toc ul { gap: 1rem; flex-wrap: wrap; justify-content: center; }
+  nav.toc a { font-size: 0.75rem; }
+  figure.wide { padding: 0 1rem; }
+}

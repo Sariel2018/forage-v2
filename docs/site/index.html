@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Forage V2 — Knowledge Evolution and Transfer in Autonomous Agent Organizations</title>
+  <meta name="description" content="An autonomous agent architecture that accumulates and transfers experience across runs, models, and task types." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══════════ Hero ═══════════ -->
+<header class="hero">
+  <img class="hero-logo" src="assets/logo.png" alt="Forage" />
+  <h1>Your basecamp for the unknown.</h1>
+  <p class="tagline">
+    An autonomous agent architecture that accumulates and transfers experience
+    across runs, models, and task types.
+  </p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="assets/forage_v2_paper.pdf">Read the Report (PDF)</a>
+    <a class="btn btn-ghost" href="https://github.com/Sariel2018/forage-v2">GitHub</a>
+  </div>
+</header>
+
+<!-- ═══════════ Nav ═══════════ -->
+<nav class="toc">
+  <ul>
+    <li><a href="#problem">The Problem</a></li>
+    <li><a href="#insight">The Insight</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#vision">Vision</a></li>
+    <li><a href="#paper">Technical Report</a></li>
+  </ul>
+</nav>
+
+<div class="content">
+
+<!-- ═══════════ The Problem ═══════════ -->
+<section id="problem">
+  <h2>The Problem</h2>
+
+  <p>
+    You ask an AI agent to do an open-ended task. It works for a while, declares victory,
+    reports 100% complete. You check its work. It found 15% of what exists.
+  </p>
+
+  <p>
+    We call this <strong>denominator blindness</strong> — the agent's count of what it found
+    may be accurate, but it never discovered the total. It doesn't know what it doesn't know.
+    And every current agent framework lets the agent grade its own work. None of them catch this.
+  </p>
+
+  <div class="pull-quote">
+    The agent's numerator is fine. It never discovered the denominator.
+  </div>
+
+  <p>
+    This isn't a capability problem — it's a structural one. A single agent asked to both
+    do the work <em>and</em> judge the work has a systematic incentive to declare victory early.
+    Larger models, better prompts, richer tools — none of these fix the structural conflict.
+    The judge and the judged cannot be the same entity.
+  </p>
+</section>
+
+<!-- ═══════════ The Insight ═══════════ -->
+<section id="insight">
+  <h2>The Insight</h2>
+
+  <p>
+    Forage doesn't make individual agents stronger. It designs <strong>institutions</strong> —
+    audit separation, contract protocols, organizational memory — that make ordinary agents reliable.
+  </p>
+
+  <h3>Two agents, not one</h3>
+  <p>
+    One <strong>explores</strong> (the Planner), one <strong>maps</strong> (the Evaluator).
+    They can't see each other's code — like an auditor who can't read the books they're auditing.
+    The Evaluator doesn't check against a pre-written rubric. It <em>discovers</em> what
+    "complete" means by independently exploring the problem space. Both evolve together.
+  </p>
+
+  <h3>The organization remembers</h3>
+  <p>
+    After each run, both agents independently write down what they learned — which sources are
+    reliable, what pitfalls exist, how the domain is structured. The next team reads the notebook
+    before heading out. Over six runs, the organization accumulates 54 knowledge entries.
+  </p>
+
+  <h3>Knowledge transfers across models</h3>
+  <p>
+    A weaker model, given a stronger model's accumulated knowledge, doesn't need to rediscover
+    what the stronger model already knew. The knowledge didn't make Sonnet smarter. It made
+    Sonnet <em>not waste time rediscovering what Opus already knew</em>.
+  </p>
+</section>
+
+<!-- ═══════════ Results ═══════════ -->
+<section id="results">
+  <h2>Results</h2>
+
+  <div class="metrics-strip">
+    <div class="metric-card">
+      <div class="number">98.6%</div>
+      <div class="label">Coverage with knowledge</div>
+    </div>
+    <div class="metric-card">
+      <div class="number">45%</div>
+      <div class="label">Cost reduction</div>
+    </div>
+    <div class="metric-card">
+      <div class="number">1.8&times;</div>
+      <div class="label">Faster convergence</div>
+    </div>
+    <div class="metric-card">
+      <div class="number">266</div>
+      <div class="label">Three runs, same answer</div>
+    </div>
+  </div>
+
+  <p>
+    Without Forage, a single agent self-reports 100% coverage at 15.9% actual recall.
+    With Forage V1, agents achieve 98.8% actual recall with calibrated self-assessment.
+    V2 adds something V1 couldn't do: the organization <em>learns</em>.
+  </p>
+
+  <div class="highlight-box">
+    <h3>Knowledge transfer: NVIDIA desktop GPU benchmark</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Sonnet (cold)</th>
+          <th>Sonnet + Opus knowledge</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Coverage</td>
+          <td>93.1%</td>
+          <td>98.6%</td>
+        </tr>
+        <tr>
+          <td>Rounds to converge</td>
+          <td>7.0</td>
+          <td>4.5</td>
+        </tr>
+        <tr>
+          <td>Cost per run</td>
+          <td>$9.40</td>
+          <td>$5.13</td>
+        </tr>
+        <tr>
+          <td>Denominator spread</td>
+          <td>320–411 (scattered)</td>
+          <td>266 (converged)</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-bottom:0; font-size: 0.9rem; color: var(--text-secondary);">
+      Three independent seeded runs arrive at exactly the same denominator (266),
+      demonstrating that knowledge transfer calibrates not just execution but evaluation itself.
+    </p>
+  </div>
+
+  <figure class="wide">
+    <img src="assets/transfer_effect.png"
+         alt="Knowledge transfer effect across six runs" />
+    <figcaption>
+      <strong>Knowledge transfer effect.</strong> Seeded Sonnet's coverage approaches Opus
+      and exceeds cold Sonnet on 5 of 6 runs. Convergence speed roughly halves
+      (mean 4.5 rounds vs. 7.0).
+    </figcaption>
+  </figure>
+
+  <figure class="wide">
+    <img src="assets/denominator_convergence.png"
+         alt="Denominator convergence across conditions" />
+    <figcaption>
+      <strong>Denominator convergence.</strong> Cold Sonnet denominators scatter above 320;
+      seeded Sonnet converges to exactly 266 — the same number, from three independent runs.
+      Knowledge anchors not just what agents collect, but how they evaluate.
+    </figcaption>
+  </figure>
+
+  <figure class="wide">
+    <img src="assets/knowledge_growth.png"
+         alt="Knowledge accumulation across runs" />
+    <figcaption>
+      <strong>Knowledge accumulation.</strong> All three task types show monotonic growth
+      with consistent per-run increments, indicating that post-mortem extraction reliably
+      produces new lessons regardless of domain.
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ═══════════ How It Works ═══════════ -->
+<section id="how">
+  <h2>How It Works</h2>
+
+  <h3>Method isolation</h3>
+  <p>
+    The Evaluator writes <code>eval.py</code> (how to measure completeness).
+    The Planner writes <code>action.py</code> (how to execute the task).
+    Neither can read the other's script. They coordinate through a public
+    <code>eval_contract.md</code> — like an auditor's terms of engagement.
+  </p>
+
+  <p>
+    This isn't just a design choice — it's the core invariant. We caught an agent bypassing
+    our original isolation mechanism (dotfile hiding) and directly executing the other agent's
+    evaluation script. Two rounds later, it declared perfect coverage. The post-mortem then
+    encoded this shortcut as "knowledge," contaminating future runs.
+    V2 uses <strong>physical workspace separation</strong> — each agent runs in its own
+    directory with no access to the other's files.
+  </p>
+
+  <figure class="wide">
+    <img src="assets/single_run_anatomy.png"
+         alt="Anatomy of a single run" />
+    <figcaption>
+      <strong>Anatomy of a single run.</strong> Coverage and denominator co-evolve across
+      four rounds: the Evaluator expands the denominator as it refines its understanding,
+      causing a coverage dip despite no loss of collected records. This is co-evolution
+      in action.
+    </figcaption>
+  </figure>
+
+  <h3>Knowledge evolution</h3>
+  <p>
+    After each run, both agents independently extract transferable lessons through a
+    post-mortem process. These lessons accumulate in a persistent knowledge base —
+    append-only, never overwritten. The next run begins with this accumulated context,
+    but agents are free to ignore advice that doesn't fit their situation.
+    The knowledge is advisory, not prescriptive.
+  </p>
+
+  <h3>Verified across task types</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Task</th>
+        <th>Domain</th>
+        <th>What it tests</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>NVIDIA Desktop GPUs</td>
+        <td>Web scraping</td>
+        <td>Data collection at scale</td>
+      </tr>
+      <tr>
+        <td>UniProt T2D Proteins</td>
+        <td>REST API</td>
+        <td>Tool generalization</td>
+      </tr>
+      <tr>
+        <td>Q10 Mathematical Proof</td>
+        <td>Code execution</td>
+        <td>Non-collection task type</td>
+      </tr>
+      <tr>
+        <td>Q6 Mathematical Proof</td>
+        <td>Code execution</td>
+        <td>Capability boundary</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════ The Deeper Story ═══════════ -->
+<section id="deeper">
+  <h2>The Deeper Story</h2>
+
+  <p>
+    Most approaches to improving agent performance operate at the individual level: larger
+    models, better post-training, richer tool sets. These results suggest that a
+    complementary dimension is underexplored — <strong>organizational design</strong>: how
+    agents are structured relative to each other, how evaluation independence is maintained,
+    and how experience accumulates across the institution rather than within any single agent.
+  </p>
+
+  <div class="pull-quote">
+    Forage does not make individual agents stronger.<br />
+    It designs institutions that make ordinary agents reliable.
+  </div>
+
+  <p>
+    Each mechanism maps to an established institutional pattern:
+    method isolation is audit separation; the evaluation contract is contract law;
+    the knowledge base is organizational memory; the post-mortem is after-action review.
+    These aren't metaphors — they're the same structural solutions that human institutions
+    developed to solve the same class of problems: ensuring that judgment remains credible
+    when the stakes are high and the territory is unknown.
+  </p>
+
+  <p>
+    The denominator variance across our experiments — 265 to 411 for NVIDIA desktop GPUs —
+    is not a flaw but a feature. It reflects genuine conceptual ambiguity in the real world:
+    what counts as a "desktop GPU" depends on definitions that reasonable observers can
+    disagree about. The system's ability to converge toward consistent estimates — three
+    independent seeded runs arriving at exactly 266 — demonstrates that institutional
+    knowledge can calibrate not just execution but evaluation itself.
+  </p>
+
+  <div class="pull-quote">
+    This is a form of collective augmentation: every run enriches the organization,
+    and every future agent — regardless of origin — inherits that wealth.
+    The trails blazed by one team become the starting map for the next.
+  </div>
+</section>
+
+<!-- ═══════════ Vision ═══════════ -->
+<section id="vision">
+  <h2>Vision</h2>
+
+  <p>
+    Forage is not just a research prototype. It's a platform — a place where any agent,
+    from any provider, can benefit from the accumulated wisdom of those who explored before.
+  </p>
+
+  <ul class="roadmap">
+    <li>
+      <span class="version">V1 — Expedition</span><br />
+      <span class="desc">Two agents establish credible judgment.
+        <a href="https://github.com/Sariel2018/forage">Code</a></span>
+    </li>
+    <li class="current">
+      <span class="version">V2 — Organization</span><br />
+      <span class="desc">Experience accumulates and transfers across runs.</span>
+    </li>
+    <li>
+      <span class="version">V3 — Basecamp</span><br />
+      <span class="desc">A camp manager allocates resources dynamically — adjusting budgets,
+        swapping models, curating the knowledge base.</span>
+    </li>
+    <li>
+      <span class="version">V4 — Highway</span><br />
+      <span class="desc">Verified routes crystallize into reusable pipelines.
+        The trails blazed by explorers become highways for everyone.</span>
+    </li>
+  </ul>
+
+  <div class="vision-gallery">
+    <div>
+      <img src="assets/start_ui.png" alt="Forage start screen" />
+      <p class="caption">Your basecamp awaits.</p>
+    </div>
+    <div>
+      <img src="assets/camp_stage.png" alt="Forage camp stage — explorer ventures out while cartographer holds the camp" />
+      <p class="caption">Fog clears as the team explores. The explorer ventures out; the cartographer holds the camp.</p>
+    </div>
+    <div>
+      <img src="assets/ui_vision.png" alt="Forage basecamp UI concept" />
+      <p class="caption">Expedition management, team roster, knowledge assets.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Paper ═══════════ -->
+<section id="paper">
+  <h2>Technical Report</h2>
+
+  <p>
+    <strong>Forage V2: Knowledge Evolution and Transfer in Autonomous Agent Organizations</strong><br />
+    Huaqing Xie, 2026
+  </p>
+
+  <div class="hero-actions" style="justify-content: flex-start; margin: 1.5rem 0;">
+    <a class="btn btn-primary" href="assets/forage_v2_paper.pdf">Download PDF</a>
+    <!--<a class="btn btn-ghost" href="https://arxiv.org/abs/TODO">arXiv</a>-->
+  </div>
+
+  <p>
+    See also:
+    <strong>Forage V1: Solving Denominator Blindness via Co-Evolving Evaluation</strong>
+    (<a href="https://github.com/Sariel2018/forage">code</a>)
+  </p>
+</section>
+
+</div><!-- .content -->
+
+<!-- ═══════════ Footer ═══════════ -->
+<footer>
+  <div class="citation">@article{foragev2,
+    title={Forage V2: Knowledge Evolution and Transfer
+           in Autonomous Agent Organizations},
+    author={Xie, Huaqing},
+    journal={arXiv preprint},
+    year={2026}
+}</div>
+  <p>Apache 2.0 &middot; <a href="https://github.com/Sariel2018/forage-v2">GitHub</a></p>
+</footer>
+
+</body>
+</html>
