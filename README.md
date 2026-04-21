@@ -18,6 +18,8 @@
 
 ---
 
+> *The next leap in autonomous AI isn't a bigger model — it's a smarter organization.*
+
 ## Highlights
 
 - **Co-evolving evaluation** — No human-written criteria, no manual checkpoints. Evaluation standards are *discovered* by an independent agent and co-evolve with execution — fully autonomous from start to stop.
