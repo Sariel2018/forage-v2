@@ -142,6 +142,17 @@ V4  Highway        →  Verified routes crystallize into reusable pipelines
 
 **V4** will crystallize verified routes into reusable pipelines — today's expedition, tomorrow's highway.
 
+## Status
+
+This release contains the core experiment framework described in the V2 report — the dual-agent loop, method isolation, knowledge evolution, and cross-model transfer. Under active development:
+
+- Basecamp UI and run visualization
+- Multi-provider agent integration
+- Sandbox isolation and security hardening
+- Camp manager (V3)
+
+Built in spare time by a solo researcher — contributions and feedback are welcome.
+
 ## Quick start
 
 ```bash
@@ -180,10 +191,6 @@ tests/                    # 72 tests
 ## Technical Report
 
 For the full methodology, experiments, and analysis, see the [**project page**](https://sariel2018.github.io/forage-v2/) or [download the PDF](https://sariel2018.github.io/forage-v2/assets/forage_v2_paper.pdf).
-
-## Status
-
-This release contains the core experiment framework described in the V2 report. The basecamp UI and visualization tools shown above are under active development. Built in spare time by a solo researcher — contributions and feedback are welcome.
 
 ## Citation
 
