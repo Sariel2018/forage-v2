@@ -183,7 +183,7 @@ For the full methodology, experiments, and analysis, see the [**project page**](
 
 ## Status
 
-This release contains the core experiment framework described in the V2 report. The basecamp UI and visualization tools shown above are under active development. Built by a solo researcher — contributions and feedback are welcome.
+This release contains the core experiment framework described in the V2 report. The basecamp UI and visualization tools shown above are under active development. Built in spare time by a solo researcher — contributions and feedback are welcome.
 
 ## Citation
 
