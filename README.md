@@ -10,8 +10,9 @@
 </p>
 
 <p align="center">
+  <a href="https://sariel2018.github.io/forage-v2/"><img src="https://img.shields.io/badge/Project-Page-forestgreen.svg" alt="Project Page"></a>
   <a href="https://arxiv.org/abs/TODO"><img src="https://img.shields.io/badge/arXiv-V2_Paper-b31b1b.svg" alt="arXiv V2"></a>
-  <a href="https://arxiv.org/abs/TODO"><img src="https://img.shields.io/badge/arXiv-V1_Paper-b31b1b.svg" alt="arXiv V1"></a>
+  <a href="https://github.com/Sariel2018/forage"><img src="https://img.shields.io/badge/Forage-V1-blue.svg" alt="Forage V1"></a>
   <a href="https://github.com/Sariel2018/forage-v2/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
 </p>
 
