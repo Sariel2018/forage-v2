@@ -136,6 +136,12 @@ tests/                    # 72 tests
 </p>
 
 <p align="center">
+  <img src="assets/camp_stage.png" alt="Forage Camp Stage" width="600">
+  <br>
+  <em>Fog clears as the team explores. The explorer ventures out; the cartographer holds the camp.</em>
+</p>
+
+<p align="center">
   <img src="assets/ui_vision.png" alt="Forage Basecamp UI" width="700">
   <br>
   <em>Expedition management, team roster, knowledge assets.</em>
