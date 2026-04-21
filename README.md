@@ -18,6 +18,16 @@
 
 ---
 
+## Highlights
+
+- **Denominator blindness** — We identified and named a fundamental failure mode: agents self-report 100% completion at 15.9% actual recall. No existing framework catches this.
+- **Co-evolving evaluation** — Evaluation criteria are *discovered* by an independent agent, not predefined by humans. Both the explorer and the auditor evolve together.
+- **Method isolation** — The Evaluator and Planner cannot see each other's code. Physical workspace separation enforces audit independence.
+- **Knowledge evolution** — After each run, agents extract transferable lessons. The next team inherits accumulated organizational wisdom.
+- **Cross-model transfer** — A weaker model with a stronger model's knowledge converges 1.8x faster at 45% lower cost, arriving at the same answer three times independently.
+
+---
+
 ## The problem
 
 You ask an AI agent to do an open-ended task. It works for a while, declares victory, reports 100% complete. It found 15% of what exists.
