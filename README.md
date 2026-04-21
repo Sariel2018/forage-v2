@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://sariel2018.github.io/forage-v2/"><img src="https://img.shields.io/badge/Project-Page-forestgreen.svg" alt="Project Page"></a>
-  <a href="https://arxiv.org/abs/TODO"><img src="https://img.shields.io/badge/arXiv-V2_Paper-b31b1b.svg" alt="arXiv V2"></a>
+  <a href="https://sariel2018.github.io/forage-v2/assets/forage_v2_paper.pdf"><img src="https://img.shields.io/badge/V2-Technical_Report-b31b1b.svg" alt="V2 Report"></a>
   <a href="https://github.com/Sariel2018/forage"><img src="https://img.shields.io/badge/Forage-V1-blue.svg" alt="Forage V1"></a>
   <a href="https://github.com/Sariel2018/forage-v2/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
 </p>
@@ -134,9 +134,9 @@ V3  Basecamp       →  A camp manager allocates resources dynamically
 V4  Highway        →  Verified routes crystallize into reusable pipelines
 ```
 
-**V1** solved the single-run problem: how do you know the agent actually finished? ([paper](https://arxiv.org/abs/TODO) | [code](https://github.com/Sariel2018/forage))
+**V1** solved the single-run problem: how do you know the agent actually finished? ([code](https://github.com/Sariel2018/forage))
 
-**V2** solves the multi-run problem: how does the organization learn? ([paper](https://arxiv.org/abs/TODO))
+**V2** solves the multi-run problem: how does the organization learn? ([report](https://sariel2018.github.io/forage-v2/assets/forage_v2_paper.pdf))
 
 **V3** will add a camp manager that dynamically allocates resources — adjusting turn budgets, swapping models, and curating the knowledge base based on accumulated experience.
 
