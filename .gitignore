@@ -46,3 +46,15 @@ logo/
 
 # pytest
 .pytest_cache/
+
+# UI prototypes (not ready for release)
+apps/
+apps_type2/
+apps_type3/
+
+# Brand assets source (logo_v2/ has raw files; assets/ has curated versions)
+logo_v2/
+
+# Experiment runner scripts (local use)
+scripts/night_*.sh
+scripts/run_*.sh
