@@ -5,8 +5,8 @@
 <h3 align="center">Your basecamp for the unknown.</h3>
 
 <p align="center">
-  An autonomous agent architecture that accumulates and transfers experience<br>
-  across runs, models, and task types.
+  An autonomous agent architecture that learns as an organization —<br>
+  accumulating and transferring experience across runs, models, and task types.
 </p>
 
 <p align="center">
