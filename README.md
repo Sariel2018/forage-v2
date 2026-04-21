@@ -140,7 +140,7 @@ V4  Highway        →  Verified routes crystallize into reusable pipelines
 
 **V3** will add a camp manager that dynamically allocates resources — adjusting turn budgets, swapping models, and curating the knowledge base based on accumulated experience.
 
-**V4** will crystallize verified routes into reusable pipelines — the trails blazed by explorers become highways for everyone.
+**V4** will crystallize verified routes into reusable pipelines — today's expedition, tomorrow's highway.
 
 ## Quick start
 
