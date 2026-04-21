@@ -177,6 +177,10 @@ tasks/                    # Task specifications (YAML)
 tests/                    # 72 tests
 ```
 
+## Technical Report
+
+For the full methodology, experiments, and analysis, see the [**project page**](https://sariel2018.github.io/forage-v2/) or [download the PDF](https://sariel2018.github.io/forage-v2/assets/forage_v2_paper.pdf).
+
 ## Status
 
 This release contains the core experiment framework described in the V2 report. The basecamp UI and visualization tools shown above are under active development. Built by a solo researcher — contributions and feedback are welcome.
