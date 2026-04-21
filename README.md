@@ -25,6 +25,8 @@
 - **Method isolation** — The Evaluator and Planner cannot see each other's code. Physical workspace separation enforces audit independence.
 - **Knowledge evolution** — After each run, agents extract transferable lessons. The next team inherits accumulated organizational wisdom.
 - **Cross-model transfer** — A weaker model with a stronger model's knowledge converges 1.8x faster at 45% lower cost, arriving at the same answer three times independently.
+- **Zero human-in-the-loop** — No human-written evaluation criteria, no manual checkpoints. Agents autonomously discover, execute, evaluate, and decide when to stop.
+- **Dual-agent primitive** — The Evaluator–Planner pair is a minimal composable unit. Multiple pairs can run in parallel across different tasks, feeding into a shared knowledge base.
 
 ---
 
