@@ -68,6 +68,15 @@ A weaker model, given a stronger model's accumulated knowledge, doesn't need to 
 | Cost per run | $9.40 | $5.13 | 45% cheaper |
 | Denominator agreement | Scattered (320–411) | Converged (266) | 3 runs, same answer |
 
+### Verified across task types
+
+| Task | Domain | Tool | What it tests |
+|---|---|---|---|
+| NVIDIA Desktop GPUs | Web scraping | Browser | Data collection at scale (265–411 candidates) |
+| UniProt T2D Proteins | API queries | REST API | Tool generalization (28–30 candidates) |
+| Q10 Mathematical Proof | Reasoning | Code execution | Non-collection task type |
+| Q6 Mathematical Proof | Hard reasoning | Code execution | Capability boundary |
+
 ## Architecture
 
 ```
@@ -93,50 +102,6 @@ A weaker model, given a stronger model's accumulated knowledge, doesn't need to 
 ```
 
 **Method isolation** is the core invariant. The Evaluator writes `eval.py` (how to measure); the Planner writes `action.py` (how to execute). Neither can read the other's script. They coordinate through a public `eval_contract.md` — like an auditor's terms of engagement. V2 enforces this through **physical workspace separation** — each agent runs in its own directory with no access to the other's files.
-
-## Verified across task types
-
-| Task | Domain | Tool | What it tests |
-|---|---|---|---|
-| NVIDIA Desktop GPUs | Web scraping | Browser | Data collection at scale (265–411 candidates) |
-| UniProt T2D Proteins | API queries | REST API | Tool generalization (28–30 candidates) |
-| Q10 Mathematical Proof | Reasoning | Code execution | Non-collection task type |
-| Q6 Mathematical Proof | Hard reasoning | Code execution | Capability boundary |
-
-## Quick start
-
-```bash
-# Prerequisites: Python 3.11+, Claude Code CLI (https://claude.ai/code)
-pip install -e .
-
-# Run a single task
-forage run tasks/nvidia_gpu.yaml
-
-# Run a 6-run learning curve experiment
-forage experiment tasks/nvidia_gpu.yaml
-```
-
-## Project structure
-
-```
-forage/
-├── agents/              # Evaluator, Planner, Executor implementations
-│   ├── evaluator.py     #   Discovers what "complete" means
-│   ├── planner.py       #   Decides how to execute
-│   └── executor.py      #   Runs agent scripts (non-LLM)
-├── core/
-│   ├── loop.py          #   Multi-round Evaluator→Planner→Executor loop
-│   ├── workspace.py     #   Physical isolation (eval_ws/ ↔ plan_ws/)
-│   ├── knowledge.py     #   Post-mortem extraction & knowledge accumulation
-│   ├── trajectory.py    #   Per-round state tracking
-│   └── spec.py          #   Task spec loader (YAML)
-└── experiments/
-    ├── runner.py         #   Multi-run experiment orchestration
-    ├── learning_curve.py #   Cross-run learning analysis
-    └── single_agent.py   #   Baseline: single agent without Forage
-tasks/                    # Task specifications (YAML)
-tests/                    # 72 tests
-```
 
 ## The vision
 
@@ -175,9 +140,44 @@ V4  Highway        →  Verified routes crystallize into reusable pipelines
 
 **V4** will crystallize verified routes into reusable pipelines — the trails blazed by explorers become highways for everyone.
 
+## Quick start
+
+```bash
+# Prerequisites: Python 3.11+, Claude Code CLI (https://claude.ai/code)
+pip install -e .
+
+# Run a single task
+forage run tasks/nvidia_gpu.yaml
+
+# Run a 6-run learning curve experiment
+forage experiment tasks/nvidia_gpu.yaml
+```
+
+## Project structure
+
+```
+forage/
+├── agents/              # Evaluator, Planner, Executor implementations
+│   ├── evaluator.py     #   Discovers what "complete" means
+│   ├── planner.py       #   Decides how to execute
+│   └── executor.py      #   Runs agent scripts (non-LLM)
+├── core/
+│   ├── loop.py          #   Multi-round Evaluator→Planner→Executor loop
+│   ├── workspace.py     #   Physical isolation (eval_ws/ ↔ plan_ws/)
+│   ├── knowledge.py     #   Post-mortem extraction & knowledge accumulation
+│   ├── trajectory.py    #   Per-round state tracking
+│   └── spec.py          #   Task spec loader (YAML)
+└── experiments/
+    ├── runner.py         #   Multi-run experiment orchestration
+    ├── learning_curve.py #   Cross-run learning analysis
+    └── single_agent.py   #   Baseline: single agent without Forage
+tasks/                    # Task specifications (YAML)
+tests/                    # 72 tests
+```
+
 ## Status
 
-The V2 paper has been submitted to arXiv. This is a research prototype — contributions and feedback are welcome.
+This release contains the core experiment framework described in the V2 report. The basecamp UI and visualization tools shown above are under active development. Built by a solo researcher — contributions and feedback are welcome.
 
 ## Citation
 
