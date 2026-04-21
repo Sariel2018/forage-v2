@@ -144,7 +144,7 @@ V4  Highway        →  Verified routes crystallize into reusable pipelines
 
 ## Status
 
-This release contains the core experiment framework described in the V2 report — the dual-agent loop, method isolation, knowledge evolution, and cross-model transfer. Under active development:
+This release contains the core experiment framework described in the V2 report — the dual-agent loop, method isolation, knowledge evolution, and cross-model transfer. The V2 paper has been submitted to arXiv and is currently under moderation. Under active development:
 
 - Basecamp UI and run visualization
 - Multi-provider agent integration
