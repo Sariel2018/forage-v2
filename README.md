@@ -204,6 +204,10 @@ For the full methodology, experiments, and analysis, see the [**project page**](
 }
 ```
 
+## Contact
+
+Huaqing Xie — [xhq422986742@gmail.com](mailto:xhq422986742@gmail.com) · [huaqing.xie@foxmail.com](mailto:huaqing.xie@foxmail.com)
+
 ## License
 
 MIT
