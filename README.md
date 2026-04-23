@@ -11,6 +11,7 @@
 
 <p align="center">
   <a href="https://sariel2018.github.io/forage-v2/"><img src="https://img.shields.io/badge/Project-Page-forestgreen.svg" alt="Project Page"></a>
+  <a href="https://arxiv.org/abs/2604.19837"><img src="https://img.shields.io/badge/arXiv-2604.19837-b31b1b.svg" alt="arXiv"></a>
   <a href="https://sariel2018.github.io/forage-v2/assets/forage_v2_paper.pdf"><img src="https://img.shields.io/badge/V2-Technical_Report-b31b1b.svg" alt="V2 Report"></a>
   <a href="https://github.com/Sariel2018/forage"><img src="https://img.shields.io/badge/Forage-V1-blue.svg" alt="Forage V1"></a>
   <a href="https://github.com/Sariel2018/forage-v2/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
@@ -144,7 +145,7 @@ V4  Highway        →  Verified routes crystallize into reusable pipelines
 
 ## Status
 
-This release contains the core experiment framework described in the V2 report — the dual-agent loop, method isolation, knowledge evolution, and cross-model transfer. The V2 paper has been submitted to arXiv and is currently under moderation. Under active development:
+This release contains the core experiment framework described in the [V2 paper](https://arxiv.org/abs/2604.19837) — the dual-agent loop, method isolation, knowledge evolution, and cross-model transfer. Under active development:
 
 - Basecamp UI and run visualization
 - Multi-provider agent integration
@@ -190,17 +191,18 @@ tests/                    # 72 tests
 
 ## Technical Report
 
-For the full methodology, experiments, and analysis, see the [**project page**](https://sariel2018.github.io/forage-v2/) or [download the PDF](https://sariel2018.github.io/forage-v2/assets/forage_v2_paper.pdf).
+For the full methodology, experiments, and analysis, see the [**arXiv paper**](https://arxiv.org/abs/2604.19837), the [**project page**](https://sariel2018.github.io/forage-v2/), or [download the PDF](https://sariel2018.github.io/forage-v2/assets/forage_v2_paper.pdf).
 
 ## Citation
 
 ```bibtex
-@article{foragev2,
-    title={Forage V2: Knowledge Evolution and Transfer
+@article{xie2026forage,
+    title={Forage: Knowledge Evolution and Cross-Model Transfer
            in Autonomous Agent Organizations},
     author={Xie, Huaqing},
-    journal={arXiv preprint},
-    year={2026}
+    journal={arXiv preprint arXiv:2604.19837},
+    year={2026},
+    url={https://arxiv.org/abs/2604.19837}
 }
 ```
 
